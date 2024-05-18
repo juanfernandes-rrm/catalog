@@ -19,3 +19,8 @@ spring:
     console:
       enabled: true
       path: /h2-console
+
+broker:
+  queue:
+    receipt-scan:
+      name: default.receipt-scan
