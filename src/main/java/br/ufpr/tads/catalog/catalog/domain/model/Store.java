@@ -3,7 +3,6 @@ package br.ufpr.tads.catalog.catalog.domain.model;
 import jakarta.persistence.*;
 import lombok.Data;
 
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -18,6 +17,6 @@ public class Store {
     private String CNPJ;
     @OneToMany(mappedBy = "store")
     private Set<ProductStore> productStore;
-//    @OneToOne
-//    private Address address;
+    @OneToOne
+    private Address address;
 }

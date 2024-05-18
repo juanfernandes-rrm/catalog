@@ -1,14 +1,18 @@
 package br.ufpr.tads.catalog.catalog.domain.service;
 
+import br.ufpr.tads.catalog.catalog.domain.model.Address;
 import br.ufpr.tads.catalog.catalog.domain.model.Product;
 import br.ufpr.tads.catalog.catalog.domain.model.ProductStore;
 import br.ufpr.tads.catalog.catalog.domain.model.Store;
+import br.ufpr.tads.catalog.catalog.domain.repository.AddressRepository;
 import br.ufpr.tads.catalog.catalog.domain.repository.ProductRepository;
 import br.ufpr.tads.catalog.catalog.domain.repository.ProductStoreRepository;
 import br.ufpr.tads.catalog.catalog.domain.repository.StoreRepository;
+import br.ufpr.tads.catalog.catalog.domain.response.AddressDTO;
 import br.ufpr.tads.catalog.catalog.domain.response.ItemDTO;
 import br.ufpr.tads.catalog.catalog.domain.response.ReceiptResponseDTO;
 import br.ufpr.tads.catalog.catalog.domain.response.StoreDTO;
+import org.h2.mvstore.db.RowDataType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +31,9 @@ public class ProductService {
     @Autowired
     private ProductStoreRepository productStoreRepository;
 
+    @Autowired
+    private AddressRepository addressRepository;
+
 
     public void processReceipt(ReceiptResponseDTO response) {
         processItems(response.getItems(), processStore(response.getStore()));
@@ -37,8 +44,19 @@ public class ProductService {
             Store storeEntity = new Store();
             storeEntity.setCNPJ(store.getCNPJ());
             storeEntity.setName(store.getName());
+            storeEntity.setAddress(processAddress(store.getAddress()));
             return storeRepository.save(storeEntity);
         });
+    }
+
+    private Address processAddress(AddressDTO address) {
+        Address addressEntity = new Address();
+        addressEntity.setCity(address.getCity());
+        addressEntity.setNumber(address.getNumber());
+        addressEntity.setState(address.getState());
+        addressEntity.setStreet(address.getStreet());
+        addressEntity.setNeighborhood(address.getNeighborhood());
+        return addressRepository.save(addressEntity);
     }
 
     private Optional<Store> getStore(String cnpj) {
