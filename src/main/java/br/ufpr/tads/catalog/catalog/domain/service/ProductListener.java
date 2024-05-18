@@ -14,11 +14,15 @@ public class ProductListener {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private ProductService productService;
+
     @RabbitListener(queues = "${broker.queue.receipt-scan.name}")
     public void listen(String message) {
         try {
             ReceiptResponseDTO response = objectMapper.reader().forType(ReceiptResponseDTO.class).readValue(message);
             System.out.println("Received message: "+response);
+            productService.processReceipt(response);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
