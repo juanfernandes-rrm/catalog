@@ -12,8 +12,11 @@ import br.ufpr.tads.catalog.catalog.domain.response.AddressDTO;
 import br.ufpr.tads.catalog.catalog.domain.response.ItemDTO;
 import br.ufpr.tads.catalog.catalog.domain.response.ReceiptResponseDTO;
 import br.ufpr.tads.catalog.catalog.domain.response.StoreDTO;
-import org.h2.mvstore.db.RowDataType;
+import br.ufpr.tads.catalog.catalog.dto.commons.ProductResponseDTO;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -37,6 +40,41 @@ public class ProductService {
 
     public void processReceipt(ReceiptResponseDTO response) {
         processItems(response.getItems(), processStore(response.getStore()));
+    }
+
+    public Page<ProductResponseDTO> getProducts(Pageable pageable) {
+        Page<Product> products = productRepository.findAll(pageable);
+        return products.map(this::mapProduct);
+    }
+
+    public ProductResponseDTO searchProductsByName(String name) {
+        String treatedName = StringUtils.stripAccents(name).trim();
+        return productRepository.findByNameContainingIgnoreCase(treatedName).stream()
+                .map(this::mapProduct)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private ProductResponseDTO mapProduct(Product product) {
+        return new ProductResponseDTO(product.getId(), product.getName(), product.getCode());
+    }
+
+    private StoreDTO mapStore(Store store) {
+        StoreDTO storeDTO = new StoreDTO();
+        storeDTO.setCNPJ(store.getCNPJ());
+        storeDTO.setName(store.getName());
+        storeDTO.setAddress(mapAddress(store.getAddress()));
+        return storeDTO;
+    }
+
+    private AddressDTO mapAddress(Address address) {
+        AddressDTO addressDTO = new AddressDTO();
+        addressDTO.setCity(address.getCity());
+        addressDTO.setState(address.getState());
+        addressDTO.setNeighborhood(address.getNeighborhood());
+        addressDTO.setStreet(address.getStreet());
+        addressDTO.setNumber(address.getNumber());
+        return addressDTO;
     }
 
     private Store processStore(StoreDTO store) {
