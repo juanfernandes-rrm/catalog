@@ -17,6 +17,8 @@ public class Product {
     private UUID id;
     private String name;
     private String code;
+    @ManyToOne
+    private Category category;
     @OneToMany(mappedBy = "product")
     private Set<ProductStore> productStore;
 
