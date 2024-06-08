@@ -1,8 +1,7 @@
 package br.ufpr.tads.catalog.catalog.domain.service;
 
 
-import br.ufpr.tads.catalog.catalog.domain.response.ReceiptResponseDTO;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import br.ufpr.tads.catalog.catalog.dto.commons.ProductsDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -20,14 +19,9 @@ public class ProductListener {
     private ProductService productService;
 
     @RabbitListener(queues = "${broker.queue.receipt-scan.name}")
-    public void listen(String message) {
-        try {
-            ReceiptResponseDTO response = objectMapper.reader().forType(ReceiptResponseDTO.class).readValue(message);
-            log.info("Received message: "+response);
-            productService.processReceipt(response);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+    public void listen(ProductsDTO message) {
+        log.info("Received message: " + message);
+        productService.process(message);
     }
 
 }

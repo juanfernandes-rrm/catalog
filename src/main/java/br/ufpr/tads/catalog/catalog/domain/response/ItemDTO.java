@@ -1,12 +1,13 @@
 package br.ufpr.tads.catalog.catalog.domain.response;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
-@Getter
-@Setter
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class ItemDTO {
     private String name;
     private String code;
