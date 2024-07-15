@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class ProductService {
@@ -68,7 +69,13 @@ public class ProductService {
 
     public Page<ProductResponseDTO> getProducts(Pageable pageable) {
         Page<Product> products = productRepository.findAll(pageable);
-        return products.map(this::mapProduct);
+
+        List<ProductResponseDTO> productResponseDTOs = products.stream().map(product -> {
+            ProductStore productStore = productStoreRepository.findTopByProductIdOrderByPriceAsc(product.getId());
+            return mapProduct(product, productStore);
+        }).collect(Collectors.toList());
+
+        return new PageImpl<>(productResponseDTOs, pageable, products.getTotalElements());
     }
 
     public Page<ProductResponseDTO> findLowestPriceForAllProducts(Pageable pageable) {
@@ -83,14 +90,18 @@ public class ProductService {
 
     public ProductResponseDTO searchProductsByName(String name) {
         String treatedName = StringUtils.stripAccents(name).trim();
-        return productRepository.findByNameContainingIgnoreCase(treatedName).stream()
-                .map(this::mapProduct)
+        List<Product> products = productRepository.findByNameContainingIgnoreCase(treatedName);
+        return products.stream()
+                .map(product -> {
+                    ProductStore productStore = productStoreRepository.findTopByProductIdOrderByPriceAsc(product.getId());
+                    return mapProduct(product, productStore);
+                })
                 .findFirst()
                 .orElse(null);
     }
 
-    private ProductResponseDTO mapProduct(Product product) {
-        return new ProductResponseDTO(product.getId(), product.getName(), product.getCode(), null, null);
+    private ProductResponseDTO mapProduct(Product product, ProductStore productStore) {
+        return new ProductResponseDTO(product.getId(), product.getName(), product.getCode(), productStore.getPrice(), productStore.getBranchId());
     }
 
     private ProductResponseDTO mapProduct(ProductStore productStore) {
