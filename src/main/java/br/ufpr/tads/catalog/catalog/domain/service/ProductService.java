@@ -5,7 +5,8 @@ import br.ufpr.tads.catalog.catalog.domain.model.ProductStore;
 import br.ufpr.tads.catalog.catalog.domain.repository.ProductRepository;
 import br.ufpr.tads.catalog.catalog.domain.repository.ProductStoreRepository;
 import br.ufpr.tads.catalog.catalog.domain.response.ItemDTO;
-import br.ufpr.tads.catalog.catalog.dto.commons.ProductResponseDTO;
+import br.ufpr.tads.catalog.catalog.dto.commons.GetProductResponseDTO;
+import br.ufpr.tads.catalog.catalog.dto.commons.ProductDTO;
 import br.ufpr.tads.catalog.catalog.dto.commons.ProductsDTO;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +19,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
+
+import static java.util.Objects.nonNull;
 
 @Service
 public class ProductService {
@@ -67,28 +71,45 @@ public class ProductService {
 //        priceHistoryRepository.save(priceHistory);
 //    }
 
-    public Page<ProductResponseDTO> getProducts(Pageable pageable) {
+    //Pesquisa de produtos
+
+    public Page<ProductDTO> getProducts(Pageable pageable) {
         Page<Product> products = productRepository.findAll(pageable);
 
-        List<ProductResponseDTO> productResponseDTOs = products.stream().map(product -> {
+        List<ProductDTO> productDTOList = products.stream().map(product -> {
             ProductStore productStore = productStoreRepository.findTopByProductIdOrderByPriceAsc(product.getId());
             return mapProduct(product, productStore);
         }).collect(Collectors.toList());
 
-        return new PageImpl<>(productResponseDTOs, pageable, products.getTotalElements());
+        return new PageImpl<>(productDTOList, pageable, products.getTotalElements());
     }
 
-    public Page<ProductResponseDTO> findLowestPriceForAllProducts(Pageable pageable) {
-        List<ProductResponseDTO> responseDTOS = new ArrayList<>();
+    public GetProductResponseDTO getProductById(UUID id) {
+        Product product = productRepository.findById(id).orElseThrow(() -> new RuntimeException("Product not found"));
+        ProductStore productStore = productStoreRepository.findTopByProductIdOrderByPriceAsc(product.getId());
+        ProductDTO productDTO = ProductDTO.builder()
+                .id(product.getId())
+                .name(product.getName())
+                .code(product.getCode())
+                .category(nonNull(product.getCategory()) ? product.getCategory().getName() : null)
+                .price(productStore.getPrice())
+                .unit(productStore.getUnit())
+                .storeId(productStore.getBranchId())
+                .build();
+        return new GetProductResponseDTO(productDTO);
+    }
+
+    public Page<ProductDTO> findLowestPriceForAllProducts(Pageable pageable) {
+        List<ProductDTO> responseDTOS = new ArrayList<>();
         Page<Product> products = productRepository.findAll(pageable);
         products.forEach(product -> {
             ProductStore productStore = productStoreRepository.findTopByProductIdOrderByPriceAsc(product.getId());
-            responseDTOS.add(new ProductResponseDTO(product.getId(), product.getName(), product.getCode(), productStore.getPrice(), productStore.getBranchId()));
+            responseDTOS.add(createProductDTO(product, productStore));
         });
         return new PageImpl<>(responseDTOS, pageable, products.getTotalElements());
     }
 
-    public ProductResponseDTO searchProductsByName(String name) {
+    public ProductDTO searchProductsByName(String name) {
         String treatedName = StringUtils.stripAccents(name).trim();
         List<Product> products = productRepository.findByNameContainingIgnoreCase(treatedName);
         return products.stream()
@@ -100,22 +121,34 @@ public class ProductService {
                 .orElse(null);
     }
 
-    private ProductResponseDTO mapProduct(Product product, ProductStore productStore) {
-        return new ProductResponseDTO(product.getId(), product.getName(), product.getCode(), productStore.getPrice(), productStore.getBranchId());
+    private ProductDTO createProductDTO(Product product, ProductStore productStore){
+        ProductDTO productDTO = new ProductDTO();
+        productDTO.setId(product.getId());
+        productDTO.setName(product.getName());
+        productDTO.setCode(product.getCode());
+        productDTO.setPrice(productStore.getPrice());
+        productDTO.setStoreId(productStore.getBranchId());
+        return productDTO;
     }
 
-    private ProductResponseDTO mapProduct(ProductStore productStore) {
-        Product product = productStore.getProduct();
-        return new ProductResponseDTO(product.getId(), product.getName(), product.getCode(), productStore.getPrice(), productStore.getBranchId());
+    private ProductDTO mapProduct(Product product, ProductStore productStore) {
+        return ProductDTO.builder()
+                .id(product.getId())
+                .name(product.getName())
+                .code(product.getCode())
+                .price(productStore.getPrice())
+                .unit(productStore.getUnit())
+                .storeId(productStore.getBranchId())
+                .build();
     }
 
     private Product saveOrUpdateProduct(ItemDTO itemDTO) {
-        return getProduct(itemDTO.getCode())
+        return getProductById(itemDTO.getCode())
                 .map(existingProduct -> updateProduct(existingProduct, itemDTO))
                 .orElseGet(() -> saveProduct(itemDTO));
     }
 
-    private Optional<Product> getProduct(String code) {
+    private Optional<Product> getProductById(String code) {
         return productRepository.findByCode(code);
     }
 
