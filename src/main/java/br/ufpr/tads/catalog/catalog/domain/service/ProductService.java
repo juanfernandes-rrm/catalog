@@ -1,10 +1,13 @@
 package br.ufpr.tads.catalog.catalog.domain.service;
 
+import br.ufpr.tads.catalog.catalog.domain.model.PriceHistory;
 import br.ufpr.tads.catalog.catalog.domain.model.Product;
 import br.ufpr.tads.catalog.catalog.domain.model.ProductStore;
+import br.ufpr.tads.catalog.catalog.domain.repository.PriceHistoryRepository;
 import br.ufpr.tads.catalog.catalog.domain.repository.ProductRepository;
 import br.ufpr.tads.catalog.catalog.domain.repository.ProductStoreRepository;
 import br.ufpr.tads.catalog.catalog.domain.response.ItemDTO;
+import br.ufpr.tads.catalog.catalog.domain.response.PriceHistoryResponseDTO;
 import br.ufpr.tads.catalog.catalog.dto.commons.GetProductResponseDTO;
 import br.ufpr.tads.catalog.catalog.dto.commons.ProductDTO;
 import br.ufpr.tads.catalog.catalog.dto.commons.ProductsDTO;
@@ -13,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -33,52 +37,23 @@ public class ProductService {
     @Autowired
     private ProductStoreRepository productStoreRepository;
 
+    @Autowired
+    private PriceHistoryRepository priceHistoryRepository;
+
     public void process(ProductsDTO productsDTO) {
         productsDTO.getItems().forEach(item -> {
             Product product = saveOrUpdateProduct(item);
-            Optional<ProductStore> existingProductStore = productStoreRepository.findByProductIdAndBranchId(product.getId(), productsDTO.getBranchId());
-
-            ProductStore productStore;
-            if (existingProductStore.isPresent()) {
-                productStore = existingProductStore.get();
-                if (!productStore.getPrice().equals(item.getUnitValue())) {
-                    // Save the current price to history before updating
-//                    savePriceHistory(productStore);
-                    productStore.setPrice(item.getUnitValue());
-                    productStore.setCreatedAt(LocalDateTime.now());
-                    productStoreRepository.save(productStore);
-                }
-            } else {
-                productStore = new ProductStore();
-                productStore.setProduct(product);
-                productStore.setBranchId(productsDTO.getBranchId());
-                productStore.setPrice(item.getUnitValue());
-                productStore.setUnit(item.getUnit());
-                productStore.setCreatedAt(LocalDateTime.now());
-                productStoreRepository.save(productStore);
-
-                // Save the initial price to history
-//                savePriceHistory(productStore);
-            }
+            ProductStore productStore = getOrCreateProductStore(productsDTO, item, product);
+            updatePriceIfNecessary(item, productStore);
         });
     }
-
-//    private void savePriceHistory(ProductStore productStore) {
-//        PriceHistory priceHistory = new PriceHistory();
-//        priceHistory.setProductStore(productStore);
-//        priceHistory.setPrice(productStore.getPrice());
-//        priceHistory.setCreatedAt(LocalDateTime.now());
-//        priceHistoryRepository.save(priceHistory);
-//    }
-
-    //Pesquisa de produtos
 
     public Page<ProductDTO> getProducts(Pageable pageable) {
         Page<Product> products = productRepository.findAll(pageable);
 
         List<ProductDTO> productDTOList = products.stream().map(product -> {
             ProductStore productStore = productStoreRepository.findTopByProductIdOrderByPriceAsc(product.getId());
-            return mapProduct(product, productStore);
+            return createProductDTO(product, productStore);
         }).collect(Collectors.toList());
 
         return new PageImpl<>(productDTOList, pageable, products.getTotalElements());
@@ -115,13 +90,13 @@ public class ProductService {
         return products.stream()
                 .map(product -> {
                     ProductStore productStore = productStoreRepository.findTopByProductIdOrderByPriceAsc(product.getId());
-                    return mapProduct(product, productStore);
+                    return createProductDTO(product, productStore);
                 })
                 .findFirst()
                 .orElse(null);
     }
 
-    private ProductDTO createProductDTO(Product product, ProductStore productStore){
+    private ProductDTO createProductDTO(Product product, ProductStore productStore) {
         ProductDTO productDTO = new ProductDTO();
         productDTO.setId(product.getId());
         productDTO.setName(product.getName());
@@ -131,15 +106,70 @@ public class ProductService {
         return productDTO;
     }
 
-    private ProductDTO mapProduct(Product product, ProductStore productStore) {
-        return ProductDTO.builder()
-                .id(product.getId())
-                .name(product.getName())
-                .code(product.getCode())
-                .price(productStore.getPrice())
-                .unit(productStore.getUnit())
-                .storeId(productStore.getBranchId())
-                .build();
+    public PriceHistoryResponseDTO getPriceHistory(UUID productId, Pageable pageable) {
+        Slice<PriceHistory> priceHistorySlice = priceHistoryRepository.findByProductId(productId, pageable);
+
+        PriceHistoryResponseDTO response = new PriceHistoryResponseDTO();
+        if (priceHistorySlice.hasContent()) {
+            Product product = priceHistorySlice.getContent().stream().findFirst().get().getProductStore().getProduct();
+            response.setProductId(product.getId());
+            response.setProductName(product.getName());
+            response.setProductCode(product.getCode());
+            response.setCategoryName(nonNull(product.getCategory()) ? product.getCategory().getName() : null);
+
+            List<PriceHistoryResponseDTO.PriceHistoryByStore> historyList = priceHistorySlice.getContent().stream()
+                    .map(priceHistory -> {
+                        PriceHistoryResponseDTO.PriceHistoryByStore priceHistoryByStoreDTO = new PriceHistoryResponseDTO.PriceHistoryByStore();
+                        priceHistoryByStoreDTO.setStoreId(priceHistory.getProductStore().getBranchId());
+                        priceHistoryByStoreDTO.setPrice(priceHistory.getPrice());
+                        priceHistoryByStoreDTO.setPriceChangeDate(priceHistory.getCreatedAt());
+
+                        return priceHistoryByStoreDTO;
+                    }).toList();
+
+            response.setPriceHistory(historyList);
+
+            PriceHistoryResponseDTO.SliceInfo sliceInfo = new PriceHistoryResponseDTO.SliceInfo();
+            sliceInfo.setHasNext(priceHistorySlice.hasNext());
+            sliceInfo.setHasPrevious(priceHistorySlice.hasPrevious());
+            sliceInfo.setPageSize(priceHistorySlice.getSize());
+            response.setSliceInfo(sliceInfo);
+        }
+
+        return response;
+    }
+
+    private ProductStore getOrCreateProductStore(ProductsDTO productsDTO, ItemDTO item, Product product) {
+        return productStoreRepository.findByProductIdAndBranchId(product.getId(), productsDTO.getBranchId())
+                .orElseGet(() -> createAndSaveProductStore(productsDTO, item, product));
+    }
+
+    private ProductStore createAndSaveProductStore(ProductsDTO productsDTO, ItemDTO item, Product product) {
+        ProductStore productStore = new ProductStore();
+        productStore.setProduct(product);
+        productStore.setBranchId(productsDTO.getBranchId());
+        productStore.setPrice(item.getUnitValue());
+        productStore.setUnit(item.getUnit());
+        productStore.setCreatedAt(LocalDateTime.now());
+        return productStoreRepository.save(productStore);
+    }
+
+    private void updatePriceIfNecessary(ItemDTO item, ProductStore productStore) {
+        if (!productStore.getPrice().equals(item.getUnitValue())) {
+            saveProductHistory(productStore);
+            productStore.setPrice(item.getUnitValue());
+            productStore.setCreatedAt(LocalDateTime.now());
+            productStoreRepository.save(productStore);
+        }
+    }
+
+    private void saveProductHistory(ProductStore productStore) {
+        PriceHistory history = new PriceHistory();
+        history.setProductStore(productStore);
+        history.setPrice(productStore.getPrice());
+        history.setCreatedAt(LocalDateTime.now());
+
+        priceHistoryRepository.save(history);
     }
 
     private Product saveOrUpdateProduct(ItemDTO itemDTO) {

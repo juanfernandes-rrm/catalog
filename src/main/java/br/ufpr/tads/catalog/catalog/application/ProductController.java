@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
+import java.util.UUID;
+
 @Slf4j
 @RestController
 @RequestMapping("/product")
@@ -58,6 +60,20 @@ public class ProductController {
         try {
             log.info("Searching products by name: {}", name);
             return ResponseEntity.ok(productService.searchProductsByName(name));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Erro interno: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/price-history")
+    public ResponseEntity<?> getPriceHistory(@RequestParam("page") int page, @RequestParam("size") int size,
+                                             @RequestParam("sortDirection") Sort.Direction sortDirection,
+                                             @RequestParam("sortBy") String sortBy,
+                                             @RequestParam("id") UUID id) {
+        try {
+            log.info("Getting price history for product {}", id);
+            Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+            return ResponseEntity.ok(productService.getPriceHistory(id, pageable));
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Erro interno: " + e.getMessage());
         }
