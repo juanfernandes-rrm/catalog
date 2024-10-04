@@ -8,7 +8,6 @@ import br.ufpr.tads.catalog.catalog.domain.repository.ProductRepository;
 import br.ufpr.tads.catalog.catalog.domain.repository.ProductStoreRepository;
 import br.ufpr.tads.catalog.catalog.domain.response.ItemDTO;
 import br.ufpr.tads.catalog.catalog.domain.response.PriceHistoryResponseDTO;
-import br.ufpr.tads.catalog.catalog.dto.commons.ProductResponseDTO;
 import br.ufpr.tads.catalog.catalog.dto.commons.GetProductResponseDTO;
 import br.ufpr.tads.catalog.catalog.dto.commons.ProductDTO;
 import br.ufpr.tads.catalog.catalog.dto.commons.ProductsDTO;
@@ -49,14 +48,12 @@ public class ProductService {
         });
     }
 
-    //Pesquisa de produtos
-
     public Page<ProductDTO> getProducts(Pageable pageable) {
         Page<Product> products = productRepository.findAll(pageable);
 
         List<ProductDTO> productDTOList = products.stream().map(product -> {
             ProductStore productStore = productStoreRepository.findTopByProductIdOrderByPriceAsc(product.getId());
-            return mapProduct(product, productStore);
+            return createProductDTO(product, productStore);
         }).collect(Collectors.toList());
 
         return new PageImpl<>(productDTOList, pageable, products.getTotalElements());
@@ -93,13 +90,13 @@ public class ProductService {
         return products.stream()
                 .map(product -> {
                     ProductStore productStore = productStoreRepository.findTopByProductIdOrderByPriceAsc(product.getId());
-                    return mapProduct(product, productStore);
+                    return createProductDTO(product, productStore);
                 })
                 .findFirst()
                 .orElse(null);
     }
 
-    private ProductDTO createProductDTO(Product product, ProductStore productStore){
+    private ProductDTO createProductDTO(Product product, ProductStore productStore) {
         ProductDTO productDTO = new ProductDTO();
         productDTO.setId(product.getId());
         productDTO.setName(product.getName());
@@ -107,11 +104,13 @@ public class ProductService {
         productDTO.setPrice(productStore.getPrice());
         productDTO.setStoreId(productStore.getBranchId());
         return productDTO;
+    }
+
     public PriceHistoryResponseDTO getPriceHistory(UUID productId, Pageable pageable) {
         Slice<PriceHistory> priceHistorySlice = priceHistoryRepository.findByProductId(productId, pageable);
 
         PriceHistoryResponseDTO response = new PriceHistoryResponseDTO();
-        if(priceHistorySlice.hasContent()){
+        if (priceHistorySlice.hasContent()) {
             Product product = priceHistorySlice.getContent().stream().findFirst().get().getProductStore().getProduct();
             response.setProductId(product.getId());
             response.setProductName(product.getName());
@@ -171,21 +170,6 @@ public class ProductService {
         history.setCreatedAt(LocalDateTime.now());
 
         priceHistoryRepository.save(history);
-    }
-
-    private ProductResponseDTO mapProduct(Product product, ProductStore productStore) {
-        return new ProductResponseDTO(product.getId(), product.getName(), product.getCode(), productStore.getPrice(), productStore.getBranchId());
-    }
-
-    private ProductDTO mapProduct(Product product, ProductStore productStore) {
-        return ProductDTO.builder()
-                .id(product.getId())
-                .name(product.getName())
-                .code(product.getCode())
-                .price(productStore.getPrice())
-                .unit(productStore.getUnit())
-                .storeId(productStore.getBranchId())
-                .build();
     }
 
     private Product saveOrUpdateProduct(ItemDTO itemDTO) {
