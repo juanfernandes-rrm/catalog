@@ -56,10 +56,14 @@ public class ProductController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<?> getProducts(@RequestParam("name") String name) {
+    public ResponseEntity<?> getProducts(@RequestParam("page") int page, @RequestParam("size") int size,
+                                         @RequestParam("sortDirection") Sort.Direction sortDirection,
+                                         @RequestParam("sortBy") String sortBy,
+                                         @RequestParam("name") String name) {
         try {
             log.info("Searching products by name: {}", name);
-            return ResponseEntity.ok(productService.searchProductsByName(name));
+            Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+            return ResponseEntity.ok(productService.searchProductsByName(name, pageable));
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Erro interno: " + e.getMessage());
         }

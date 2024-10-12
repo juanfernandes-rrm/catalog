@@ -6,17 +6,15 @@ import br.ufpr.tads.catalog.catalog.domain.model.ProductStore;
 import br.ufpr.tads.catalog.catalog.domain.repository.PriceHistoryRepository;
 import br.ufpr.tads.catalog.catalog.domain.repository.ProductRepository;
 import br.ufpr.tads.catalog.catalog.domain.repository.ProductStoreRepository;
-import br.ufpr.tads.catalog.catalog.domain.response.ItemDTO;
+import br.ufpr.tads.catalog.catalog.domain.response.GetProductResponseDTO;
 import br.ufpr.tads.catalog.catalog.domain.response.PriceHistoryResponseDTO;
-import br.ufpr.tads.catalog.catalog.dto.commons.GetProductResponseDTO;
-import br.ufpr.tads.catalog.catalog.dto.commons.ProductDTO;
+import br.ufpr.tads.catalog.catalog.domain.response.commons.ItemDTO;
+import br.ufpr.tads.catalog.catalog.domain.response.commons.ProductDTO;
+import br.ufpr.tads.catalog.catalog.dto.commons.BranchDTO;
 import br.ufpr.tads.catalog.catalog.dto.commons.ProductsDTO;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -39,6 +37,9 @@ public class ProductService {
 
     @Autowired
     private PriceHistoryRepository priceHistoryRepository;
+
+    @Autowired
+    private RegisterRetriever registerRetriever;
 
     public void process(ProductsDTO productsDTO) {
         productsDTO.getItems().forEach(item -> {
@@ -84,59 +85,39 @@ public class ProductService {
         return new PageImpl<>(responseDTOS, pageable, products.getTotalElements());
     }
 
-    public ProductDTO searchProductsByName(String name) {
+    //TODO: talvez usar projection para poder filtar por campos que são realmente retornados
+    public SliceImpl<ProductDTO> searchProductsByName(String name, Pageable pageable) {
         String treatedName = StringUtils.stripAccents(name).trim();
-        List<Product> products = productRepository.findByNameContainingIgnoreCase(treatedName);
-        return products.stream()
+        Slice<Product> products = productRepository.findByNameContainingIgnoreCase(treatedName, pageable);
+
+        List<ProductDTO> response = products.stream()
                 .map(product -> {
                     ProductStore productStore = productStoreRepository.findTopByProductIdOrderByPriceAsc(product.getId());
                     return createProductDTO(product, productStore);
                 })
-                .findFirst()
-                .orElse(null);
+                .toList();
+        return new SliceImpl<>(response, pageable, products.hasNext());
     }
 
-    private ProductDTO createProductDTO(Product product, ProductStore productStore) {
-        ProductDTO productDTO = new ProductDTO();
-        productDTO.setId(product.getId());
-        productDTO.setName(product.getName());
-        productDTO.setCode(product.getCode());
-        productDTO.setPrice(productStore.getPrice());
-        productDTO.setStoreId(productStore.getBranchId());
-        return productDTO;
-    }
-
-    public PriceHistoryResponseDTO getPriceHistory(UUID productId, Pageable pageable) {
+    public SliceImpl<PriceHistoryResponseDTO> getPriceHistory(UUID productId, Pageable pageable) {
         Slice<PriceHistory> priceHistorySlice = priceHistoryRepository.findByProductId(productId, pageable);
 
-        PriceHistoryResponseDTO response = new PriceHistoryResponseDTO();
+        List<PriceHistoryResponseDTO> responses = new ArrayList<>();
         if (priceHistorySlice.hasContent()) {
-            Product product = priceHistorySlice.getContent().stream().findFirst().get().getProductStore().getProduct();
-            response.setProductId(product.getId());
-            response.setProductName(product.getName());
-            response.setProductCode(product.getCode());
-            response.setCategoryName(nonNull(product.getCategory()) ? product.getCategory().getName() : null);
-
-            List<PriceHistoryResponseDTO.PriceHistoryByStore> historyList = priceHistorySlice.getContent().stream()
-                    .map(priceHistory -> {
-                        PriceHistoryResponseDTO.PriceHistoryByStore priceHistoryByStoreDTO = new PriceHistoryResponseDTO.PriceHistoryByStore();
-                        priceHistoryByStoreDTO.setStoreId(priceHistory.getProductStore().getBranchId());
-                        priceHistoryByStoreDTO.setPrice(priceHistory.getPrice());
-                        priceHistoryByStoreDTO.setPriceChangeDate(priceHistory.getCreatedAt());
-
-                        return priceHistoryByStoreDTO;
-                    }).toList();
-
-            response.setPriceHistory(historyList);
-
-            PriceHistoryResponseDTO.SliceInfo sliceInfo = new PriceHistoryResponseDTO.SliceInfo();
-            sliceInfo.setHasNext(priceHistorySlice.hasNext());
-            sliceInfo.setHasPrevious(priceHistorySlice.hasPrevious());
-            sliceInfo.setPageSize(priceHistorySlice.getSize());
-            response.setSliceInfo(sliceInfo);
+            responses = priceHistorySlice.getContent().stream().map(priceHistory -> {
+                ProductStore productStore = productStoreRepository.findTopByProductIdOrderByPriceAsc(priceHistory.getProductStore().getProduct().getId());
+                PriceHistoryResponseDTO responseDTO = new PriceHistoryResponseDTO();
+                responseDTO.setStoreId(productStore.getBranchId());
+                BranchDTO branch = registerRetriever.getBranch(productStore.getBranchId());
+                responseDTO.setStoreName(nonNull(branch) ? branch.getStore().getName() : "Loja não encontrada");
+                responseDTO.setBranchId(branch.getId());
+                responseDTO.setPrice(priceHistory.getPrice());
+                responseDTO.setPriceChangeDate(priceHistory.getCreatedAt());
+                return responseDTO;
+            }).toList();
         }
 
-        return response;
+        return new SliceImpl<>(responses, pageable, priceHistorySlice.hasNext());
     }
 
     private ProductStore getOrCreateProductStore(ProductsDTO productsDTO, ItemDTO item, Product product) {
@@ -192,6 +173,16 @@ public class ProductService {
         product.setName(item.getName());
         product.setCode(item.getCode());
         return productRepository.save(product);
+    }
+
+    private ProductDTO createProductDTO(Product product, ProductStore productStore) {
+        ProductDTO productDTO = new ProductDTO();
+        productDTO.setId(product.getId());
+        productDTO.setName(product.getName());
+        productDTO.setCode(product.getCode());
+        productDTO.setPrice(productStore.getPrice());
+        productDTO.setStoreId(productStore.getBranchId());
+        return productDTO;
     }
 
 }

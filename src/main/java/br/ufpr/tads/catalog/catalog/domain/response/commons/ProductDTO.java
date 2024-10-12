@@ -1,4 +1,4 @@
-package br.ufpr.tads.catalog.catalog.dto.commons;
+package br.ufpr.tads.catalog.catalog.domain.response.commons;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
