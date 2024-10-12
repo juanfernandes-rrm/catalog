@@ -1,4 +1,4 @@
-package br.ufpr.tads.catalog.catalog.domain.response;
+package br.ufpr.tads.catalog.catalog.domain.response.commons;
 
 import lombok.*;
 

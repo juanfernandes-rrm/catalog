@@ -1,6 +1,6 @@
 package br.ufpr.tads.catalog.catalog.dto.commons;
 
-import br.ufpr.tads.catalog.catalog.domain.response.ItemDTO;
+import br.ufpr.tads.catalog.catalog.domain.response.commons.ItemDTO;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
