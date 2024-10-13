@@ -1,0 +1,89 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet id="insert-categories" author="jcfrrm">
+        <insert tableName="CATEGORY">
+            <column name="ID" value="1"/>
+            <column name="NAME" value="Alimentos"/>
+            <column name="DESCRIPTION" value="Produtos alimentícios e bebidas"/>
+        </insert>
+        <insert tableName="CATEGORY">
+            <column name="ID" value="2"/>
+            <column name="NAME" value="Higiene"/>
+            <column name="DESCRIPTION" value="Produtos de higiene pessoal e cuidados"/>
+        </insert>
+        <insert tableName="CATEGORY">
+            <column name="ID" value="3"/>
+            <column name="NAME" value="Limpeza"/>
+            <column name="DESCRIPTION" value="Produtos de limpeza e utilidades domésticas"/>
+        </insert>
+        <insert tableName="CATEGORY">
+            <column name="ID" value="4"/>
+            <column name="NAME" value="Bebidas"/>
+            <column name="DESCRIPTION" value="Bebidas alcoólicas e não alcoólicas"/>
+        </insert>
+        <insert tableName="CATEGORY">
+            <column name="ID" value="5"/>
+            <column name="NAME" value="Carnes"/>
+            <column name="DESCRIPTION" value="Carnes, aves e pescados"/>
+        </insert>
+        <insert tableName="CATEGORY">
+            <column name="ID" value="6"/>
+            <column name="NAME" value="Frios e Laticínios"/>
+            <column name="DESCRIPTION" value="Queijos, iogurtes, frios e derivados"/>
+        </insert>
+        <insert tableName="CATEGORY">
+            <column name="ID" value="7"/>
+            <column name="NAME" value="Hortifruti"/>
+            <column name="DESCRIPTION" value="Frutas, legumes, verduras e produtos frescos"/>
+        </insert>
+        <insert tableName="CATEGORY">
+            <column name="ID" value="8"/>
+            <column name="NAME" value="Padaria e Confeitaria"/>
+            <column name="DESCRIPTION" value="Pães, bolos e produtos de confeitaria"/>
+        </insert>
+        <insert tableName="CATEGORY">
+            <column name="ID" value="9"/>
+            <column name="NAME" value="Bebê"/>
+            <column name="DESCRIPTION" value="Produtos para bebês, como fraldas e alimentos infantis"/>
+        </insert>
+        <insert tableName="CATEGORY">
+            <column name="ID" value="10"/>
+            <column name="NAME" value="Petshop"/>
+            <column name="DESCRIPTION" value="Alimentos e produtos para animais de estimação"/>
+        </insert>
+        <insert tableName="CATEGORY">
+            <column name="ID" value="11"/>
+            <column name="NAME" value="Saúde e Beleza"/>
+            <column name="DESCRIPTION" value="Cosméticos, maquiagens e produtos de saúde"/>
+        </insert>
+        <insert tableName="CATEGORY">
+            <column name="ID" value="12"/>
+            <column name="NAME" value="Papelaria"/>
+            <column name="DESCRIPTION" value="Artigos de papelaria e escritório"/>
+        </insert>
+        <insert tableName="CATEGORY">
+            <column name="ID" value="13"/>
+            <column name="NAME" value="Eletrônicos"/>
+            <column name="DESCRIPTION" value="Aparelhos eletrônicos e eletroportáteis"/>
+        </insert>
+        <insert tableName="CATEGORY">
+            <column name="ID" value="14"/>
+            <column name="NAME" value="Utilidades Domésticas"/>
+            <column name="DESCRIPTION" value="Produtos para o lar e cozinha"/>
+        </insert>
+        <insert tableName="CATEGORY">
+            <column name="ID" value="15"/>
+            <column name="NAME" value="Automotivo"/>
+            <column name="DESCRIPTION" value="Acessórios e produtos para automóveis"/>
+        </insert>
+        <insert tableName="CATEGORY">
+            <column name="ID" value="16"/>
+            <column name="NAME" value="Brinquedos"/>
+            <column name="DESCRIPTION" value="Brinquedos e jogos infantis"/>
+        </insert>
+    </changeSet>
+</databaseChangeLog>

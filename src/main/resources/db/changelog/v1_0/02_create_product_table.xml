@@ -15,7 +15,7 @@
             <column name="CODE" type="VARCHAR(50)">
                 <constraints nullable="false"/>
             </column>
-            <column name="CATEGORY_ID" type="binary(16)">
+            <column name="CATEGORY_ID" type="BIGINT">
                 <constraints nullable="true"/>
             </column>
         </createTable>
