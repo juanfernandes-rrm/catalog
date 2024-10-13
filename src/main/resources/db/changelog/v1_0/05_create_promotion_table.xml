@@ -1,0 +1,28 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet id="v1_0_05" author="jcfrrm">
+        <createTable tableName="PROMOTION">
+            <column name="ID" type="binary(16)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="PRODUCT-STORE_ID" type="binary(16)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="PROMOTIONAL_PRICE" type="DECIMAL(10, 2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="PROMOTION_START" type="TIMESTAMP"/>
+            <column name="PROMOTION_END" type="TIMESTAMP"/>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="PROMOTION"
+                                 baseColumnNames="PRODUCT-STORE_ID"
+                                 referencedTableName="PRODUCT_STORE"
+                                 referencedColumnNames="ID"
+                                 constraintName="FK_PROMOTION_PRODUCT_STORE"/>
+    </changeSet>
+</databaseChangeLog>
