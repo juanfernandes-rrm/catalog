@@ -13,6 +13,7 @@ import java.util.UUID;
 public class ProductStore {
 
     @Id
+    @Column(name = "ID")
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
@@ -20,15 +21,16 @@ public class ProductStore {
     @JoinColumn(name = "PRODUCT_ID", nullable = false)
     private Product product;
 
-    @Column(nullable = false)
+    @Column(name = "BRANCH_ID", nullable = false)
     private UUID branchId;
 
+    @Column(name = "UNIT", nullable = false)
     private String unit;
 
-    @Column(nullable = false)
+    @Column(name = "PRICE", nullable = false)
     private BigDecimal price;
 
-    @Column(nullable = false)
+    @Column(name = "CREATED_AT", nullable = false)
     private LocalDateTime createdAt;
 
     @OneToOne(mappedBy = "productStore", cascade = CascadeType.ALL, orphanRemoval = true)

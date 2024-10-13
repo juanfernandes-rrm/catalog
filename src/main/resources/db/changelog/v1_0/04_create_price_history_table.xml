@@ -1,0 +1,29 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet id="v1_0_04" author="jcfrrm">
+        <createTable tableName="PRICE_HISTORY">
+            <column name="ID" type="binary(16)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="PRODUCT_STORE_ID" type="binary(16)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="PRICE" type="DECIMAL(10, 2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CREATED_AT" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="PRICE_HISTORY"
+                                 baseColumnNames="PRODUCT_STORE_ID"
+                                 referencedTableName="PRODUCT_STORE"
+                                 referencedColumnNames="ID"
+                                 constraintName="FK_PRICE_HISTORY_PRODUCT_STORE_ID"/>
+    </changeSet>
+</databaseChangeLog>

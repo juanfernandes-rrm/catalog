@@ -11,8 +11,17 @@ import java.util.UUID;
 public class Category {
 
     @Id
+    @Column(name = "ID")
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+
+    @Column(name = "NAME")
     private String name;
+
+    @Column(name = "DESCRIPTION")
+    private String description;
+
+    @Column(name = "URL_IMAGE")
+    private String urlImage;
 
 }

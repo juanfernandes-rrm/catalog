@@ -12,6 +12,7 @@ import java.util.UUID;
 @Table(name = "PROMOTION")
 public class Promotion {
     @Id
+    @Column(name = "ID")
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
@@ -19,10 +20,12 @@ public class Promotion {
     @JoinColumn(name = "PRODUCT_STORE_ID", nullable = false)
     private ProductStore productStore;
 
-    @Column(nullable = false)
+    @Column(name = "PROMOTIONAL_PRICE", nullable = false)
     private BigDecimal promotionalPrice;
 
+    @Column(name = "PROMOTION_START")
     private LocalDateTime promotionStart;
 
+    @Column(name = "PROMOTION_END")
     private LocalDateTime promotionEnd;
 }

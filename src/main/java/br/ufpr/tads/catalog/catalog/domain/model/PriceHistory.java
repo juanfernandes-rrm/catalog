@@ -14,6 +14,7 @@ import java.util.UUID;
 public class PriceHistory {
 
     @Id
+    @Column(name = "ID")
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
@@ -21,9 +22,9 @@ public class PriceHistory {
     @JoinColumn(name = "PRODUCT_STORE_ID", nullable = false)
     private ProductStore productStore;
 
-    @Column(nullable = false)
+    @Column(name = "PRICE", nullable = false)
     private BigDecimal price;
 
-    @Column(nullable = false)
+    @Column(name = "CREATED_AT", nullable = false)
     private LocalDateTime createdAt;
 }
