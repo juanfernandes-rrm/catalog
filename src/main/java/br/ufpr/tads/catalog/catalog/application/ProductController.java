@@ -9,8 +9,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.UUID;
-
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -64,6 +63,20 @@ public class ProductController {
             log.info("Searching products by name: {}", name);
             Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
             return ResponseEntity.ok(productService.searchProductsByName(name, pageable));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Erro interno: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/products-details")
+    public ResponseEntity<?> getProductsDetails(@RequestBody List<UUID> productIdList,
+                                                @RequestParam("page") int page, @RequestParam("size") int size,
+                                                @RequestParam("sortDirection") Sort.Direction sortDirection,
+                                                @RequestParam("sortBy") String sortBy) {
+        try {
+            log.info("Searching products details by id list: {}", productIdList);
+            Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+            return ResponseEntity.ok(productService.getProductsDetails(productIdList, pageable));
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Erro interno: " + e.getMessage());
         }

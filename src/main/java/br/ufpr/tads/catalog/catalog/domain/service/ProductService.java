@@ -120,6 +120,16 @@ public class ProductService {
         return new SliceImpl<>(responses, pageable, priceHistorySlice.hasNext());
     }
 
+    public SliceImpl<ProductDTO> getProductsDetails(List<UUID> productIdList, Pageable pageable) {
+        List<ProductDTO> responseDTOS = new ArrayList<>();
+        Page<Product> products = productRepository.findAllByIdIn(productIdList, pageable);
+        products.forEach(product -> {
+            ProductStore productStore = productStoreRepository.findTopByProductIdOrderByPriceAsc(product.getId());
+            responseDTOS.add(createProductDTO(product, productStore));
+        });
+        return new SliceImpl<>(responseDTOS, pageable, products.hasNext());
+    }
+
     private ProductStore getOrCreateProductStore(ProductsDTO productsDTO, ItemDTO item, Product product) {
         return productStoreRepository.findByProductIdAndBranchId(product.getId(), productsDTO.getBranchId())
                 .orElseGet(() -> createAndSaveProductStore(productsDTO, item, product));
