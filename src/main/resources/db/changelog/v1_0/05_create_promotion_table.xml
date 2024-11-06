@@ -9,7 +9,7 @@
             <column name="ID" type="binary(16)">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
-            <column name="PRODUCT-STORE_ID" type="binary(16)">
+            <column name="PRODUCT_STORE_ID" type="binary(16)">
                 <constraints nullable="false"/>
             </column>
             <column name="PROMOTIONAL_PRICE" type="DECIMAL(10, 2)">
@@ -20,7 +20,7 @@
         </createTable>
 
         <addForeignKeyConstraint baseTableName="PROMOTION"
-                                 baseColumnNames="PRODUCT-STORE_ID"
+                                 baseColumnNames="PRODUCT_STORE_ID"
                                  referencedTableName="PRODUCT_STORE"
                                  referencedColumnNames="ID"
                                  constraintName="FK_PROMOTION_PRODUCT_STORE"/>
