@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -44,8 +45,8 @@ public class ProductService {
     public void process(ProductsDTO productsDTO) {
         productsDTO.getItems().forEach(item -> {
             Product product = saveOrUpdateProduct(item);
-            ProductStore productStore = getOrCreateProductStore(productsDTO, item, product);
-            updatePriceIfNecessary(item, productStore);
+            ProductStore productStore = getOrCreateProductStore(productsDTO.getBranchId(), product, item.getUnitValue(), item.getUnit());
+            updatePriceIfNecessary(productStore, item.getUnitValue());
         });
     }
 
@@ -103,18 +104,15 @@ public class ProductService {
         Slice<PriceHistory> priceHistorySlice = priceHistoryRepository.findByProductId(productId, pageable);
 
         List<PriceHistoryResponseDTO> responses = new ArrayList<>();
+
         if (priceHistorySlice.hasContent()) {
-            responses = priceHistorySlice.getContent().stream().map(priceHistory -> {
-                ProductStore productStore = productStoreRepository.findTopByProductIdOrderByPriceAsc(priceHistory.getProductStore().getProduct().getId());
-                PriceHistoryResponseDTO responseDTO = new PriceHistoryResponseDTO();
-                responseDTO.setStoreId(productStore.getBranchId());
-                BranchDTO branch = registerRetriever.getBranch(productStore.getBranchId());
-                responseDTO.setStoreName(nonNull(branch) ? branch.getStore().getName() : "Loja não encontrada");
-                responseDTO.setBranchId(branch.getId());
-                responseDTO.setPrice(priceHistory.getPrice());
-                responseDTO.setPriceChangeDate(priceHistory.getCreatedAt());
-                return responseDTO;
-            }).toList();
+            responses = priceHistorySlice.getContent().stream()
+                    .map(this::createPriceHistoryResponse)
+                    .collect(Collectors.toList());
+        } else {
+            ProductStore productStore = productStoreRepository.findTopByProductIdOrderByPriceAsc(productId);
+            PriceHistoryResponseDTO responseDTO = createPriceHistoryResponseFromProductStore(productStore);
+            responses.add(responseDTO);
         }
 
         return new SliceImpl<>(responses, pageable, priceHistorySlice.hasNext());
@@ -129,26 +127,26 @@ public class ProductService {
         });
         return new SliceImpl<>(responseDTOS, pageable, products.hasNext());
     }
+    private ProductStore getOrCreateProductStore(UUID branchId, Product product, BigDecimal price, String unit) {
+        return productStoreRepository.findByProductIdAndBranchId(product.getId(), branchId)
+                .orElseGet(() -> createAndSaveProductStore(branchId, product, price, unit));
 
-    private ProductStore getOrCreateProductStore(ProductsDTO productsDTO, ItemDTO item, Product product) {
-        return productStoreRepository.findByProductIdAndBranchId(product.getId(), productsDTO.getBranchId())
-                .orElseGet(() -> createAndSaveProductStore(productsDTO, item, product));
     }
 
-    private ProductStore createAndSaveProductStore(ProductsDTO productsDTO, ItemDTO item, Product product) {
+    private ProductStore createAndSaveProductStore(UUID branchId, Product product, BigDecimal price, String unit) {
         ProductStore productStore = new ProductStore();
         productStore.setProduct(product);
-        productStore.setBranchId(productsDTO.getBranchId());
-        productStore.setPrice(item.getUnitValue());
-        productStore.setUnit(item.getUnit());
+        productStore.setBranchId(branchId);
+        productStore.setPrice(price);
+        productStore.setUnit(unit);
         productStore.setCreatedAt(LocalDateTime.now());
         return productStoreRepository.save(productStore);
     }
 
-    private void updatePriceIfNecessary(ItemDTO item, ProductStore productStore) {
-        if (!productStore.getPrice().equals(item.getUnitValue())) {
+    private void updatePriceIfNecessary(ProductStore productStore, BigDecimal price) {
+        if (!productStore.getPrice().equals(price)) {
             saveProductHistory(productStore);
-            productStore.setPrice(item.getUnitValue());
+            productStore.setPrice(price);
             productStore.setCreatedAt(LocalDateTime.now());
             productStoreRepository.save(productStore);
         }
@@ -164,12 +162,12 @@ public class ProductService {
     }
 
     private Product saveOrUpdateProduct(ItemDTO itemDTO) {
-        return getProductById(itemDTO.getCode())
+        return getProductByCode(itemDTO.getCode())
                 .map(existingProduct -> updateProduct(existingProduct, itemDTO))
                 .orElseGet(() -> saveProduct(itemDTO));
     }
 
-    private Optional<Product> getProductById(String code) {
+    private Optional<Product> getProductByCode(String code) {
         return productRepository.findByCode(code);
     }
 
@@ -183,6 +181,33 @@ public class ProductService {
         product.setName(item.getName());
         product.setCode(item.getCode());
         return productRepository.save(product);
+    }
+
+    private PriceHistoryResponseDTO createPriceHistoryResponse(PriceHistory priceHistory) {
+        ProductStore productStore = productStoreRepository.findTopByProductIdOrderByPriceAsc(priceHistory.getProductStore().getProduct().getId());
+        PriceHistoryResponseDTO responseDTO = new PriceHistoryResponseDTO();
+        responseDTO.setStoreId(productStore.getBranchId());
+
+        BranchDTO branch = registerRetriever.getBranch(productStore.getBranchId());
+        responseDTO.setStoreName(nonNull(branch) ? branch.getStore().getName() : "Loja não encontrada");
+        responseDTO.setBranchId(branch.getId());
+        responseDTO.setPrice(priceHistory.getPrice());
+        responseDTO.setPriceChangeDate(priceHistory.getCreatedAt());
+
+        return responseDTO;
+    }
+
+    private PriceHistoryResponseDTO createPriceHistoryResponseFromProductStore(ProductStore productStore) {
+        PriceHistoryResponseDTO responseDTO = new PriceHistoryResponseDTO();
+        responseDTO.setStoreId(productStore.getBranchId());
+
+        BranchDTO branch = registerRetriever.getBranch(productStore.getBranchId());
+        responseDTO.setStoreName(nonNull(branch) ? branch.getStore().getName() : "Loja não encontrada");
+        responseDTO.setBranchId(branch.getId());
+        responseDTO.setPrice(productStore.getPrice());
+        responseDTO.setPriceChangeDate(null);
+
+        return responseDTO;
     }
 
     private ProductDTO createProductDTO(Product product, ProductStore productStore) {
