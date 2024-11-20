@@ -1,5 +1,7 @@
 package br.ufpr.tads.catalog.catalog.application;
 
+import br.ufpr.tads.catalog.catalog.domain.request.ProductsPriceRequestDTO;
+import br.ufpr.tads.catalog.catalog.domain.service.PriceService;
 import br.ufpr.tads.catalog.catalog.domain.service.ProductService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +22,9 @@ public class ProductController {
     @Autowired
     private ProductService productService;
 
+    @Autowired
+    private PriceService priceService;
+
     @GetMapping
     public ResponseEntity<?> getProducts(@RequestParam("page") int page, @RequestParam("size") int size,
                                          @RequestParam("sortDirection") Sort.Direction sortDirection, @RequestParam("sortBy") String sortBy) {
@@ -36,7 +41,7 @@ public class ProductController {
     public ResponseEntity<?> getProductById(@PathVariable("id") UUID id) {
         try {
             log.info("Getting product {}", id);
-            return ResponseEntity.ok(productService.getProductById(id));
+            return ResponseEntity.ok(productService.getProductByCode(id));
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Erro interno: " + e.getMessage());
         }
@@ -68,7 +73,7 @@ public class ProductController {
         }
     }
 
-    @GetMapping("/products-details")
+    @PostMapping("/products-details")
     public ResponseEntity<?> getProductsDetails(@RequestBody List<UUID> productIdList,
                                                 @RequestParam("page") int page, @RequestParam("size") int size,
                                                 @RequestParam("sortDirection") Sort.Direction sortDirection,
@@ -82,6 +87,21 @@ public class ProductController {
         }
     }
 
+    @PostMapping("/prices-by-store")
+    public ResponseEntity<?> getProductsPriceByStore(@RequestBody ProductsPriceRequestDTO productsPriceRequestDTO,
+                                                     @RequestParam("page") int page, @RequestParam("size") int size,
+                                                     @RequestParam("sortDirection") Sort.Direction sortDirection,
+                                                     @RequestParam("sortBy") String sortBy) {
+        try {
+            log.info("Searching products price by stores {}, for cep {} in distance {}",
+                    productsPriceRequestDTO.getProductIdList(), productsPriceRequestDTO.getCep(), productsPriceRequestDTO.getDistance());
+            Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+            return ResponseEntity.ok(priceService.calculateTotalPriceByStore(productsPriceRequestDTO, pageable));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Erro interno: " + e.getMessage());
+        }
+    }
+
     @GetMapping("/price-history")
     public ResponseEntity<?> getPriceHistory(@RequestParam("page") int page, @RequestParam("size") int size,
                                              @RequestParam("sortDirection") Sort.Direction sortDirection,
@@ -90,7 +110,7 @@ public class ProductController {
         try {
             log.info("Getting price history for product {}", id);
             Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
-            return ResponseEntity.ok(productService.getPriceHistory(id, pageable));
+            return ResponseEntity.ok(priceService.getPriceHistory(id, pageable));
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Erro interno: " + e.getMessage());
         }
