@@ -96,6 +96,24 @@ public class ProductService {
         return new SliceImpl<>(response, pageable, products.hasNext());
     }
 
+    public SliceImpl<PriceHistoryResponseDTO> getPriceHistory(UUID productId, Pageable pageable) {
+        Slice<PriceHistory> priceHistorySlice = priceHistoryRepository.findByProductId(productId, pageable);
+
+        List<PriceHistoryResponseDTO> responses = new ArrayList<>();
+
+        if (priceHistorySlice.hasContent()) {
+            responses = priceHistorySlice.getContent().stream()
+                    .map(this::createPriceHistoryResponse)
+                    .collect(Collectors.toList());
+        } else {
+            ProductStore productStore = productStoreRepository.findTopByProductIdOrderByPriceAsc(productId);
+            PriceHistoryResponseDTO responseDTO = createPriceHistoryResponseFromProductStore(productStore);
+            responses.add(responseDTO);
+        }
+
+        return new SliceImpl<>(responses, pageable, priceHistorySlice.hasNext());
+    }
+
     public SliceImpl<ProductDTO> getProductsDetails(List<UUID> productIdList, Pageable pageable) {
         List<ProductDTO> responseDTOS = new ArrayList<>();
         Page<Product> products = productRepository.findAllByIdIn(productIdList, pageable);
@@ -106,10 +124,9 @@ public class ProductService {
         return new SliceImpl<>(responseDTOS, pageable, products.hasNext());
     }
 
-    private ProductStore getOrCreateProductStore(UUID branchId, Product product, BigDecimal price, String unit) {
-        return productStoreRepository.findByProductIdAndBranchId(product.getId(), branchId)
-                .orElseGet(() -> createAndSaveProductStore(branchId, product, price, unit));
-
+    private ProductStore getOrCreateProductStore(ProductsDTO productsDTO, ItemDTO item, Product product) {
+        return productStoreRepository.findByProductIdAndBranchId(product.getId(), productsDTO.getBranchId())
+                .orElseGet(() -> createAndSaveProductStore(productsDTO, item, product));
     }
 
     private ProductStore createAndSaveProductStore(UUID branchId, Product product, BigDecimal price, String unit) {
@@ -160,6 +177,33 @@ public class ProductService {
         product.setName(item.getName());
         product.setCode(item.getCode());
         return productRepository.save(product);
+    }
+
+    private PriceHistoryResponseDTO createPriceHistoryResponse(PriceHistory priceHistory) {
+        ProductStore productStore = productStoreRepository.findTopByProductIdOrderByPriceAsc(priceHistory.getProductStore().getProduct().getId());
+        PriceHistoryResponseDTO responseDTO = new PriceHistoryResponseDTO();
+        responseDTO.setStoreId(productStore.getBranchId());
+
+        BranchDTO branch = registerRetriever.getBranch(productStore.getBranchId());
+        responseDTO.setStoreName(nonNull(branch) ? branch.getStore().getName() : "Loja não encontrada");
+        responseDTO.setBranchId(branch.getId());
+        responseDTO.setPrice(priceHistory.getPrice());
+        responseDTO.setPriceChangeDate(priceHistory.getCreatedAt());
+
+        return responseDTO;
+    }
+
+    private PriceHistoryResponseDTO createPriceHistoryResponseFromProductStore(ProductStore productStore) {
+        PriceHistoryResponseDTO responseDTO = new PriceHistoryResponseDTO();
+        responseDTO.setStoreId(productStore.getBranchId());
+
+        BranchDTO branch = registerRetriever.getBranch(productStore.getBranchId());
+        responseDTO.setStoreName(nonNull(branch) ? branch.getStore().getName() : "Loja não encontrada");
+        responseDTO.setBranchId(branch.getId());
+        responseDTO.setPrice(productStore.getPrice());
+        responseDTO.setPriceChangeDate(null);
+
+        return responseDTO;
     }
 
     private ProductDTO createProductDTO(Product product, ProductStore productStore) {
