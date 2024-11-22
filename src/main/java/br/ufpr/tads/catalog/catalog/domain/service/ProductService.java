@@ -7,10 +7,8 @@ import br.ufpr.tads.catalog.catalog.domain.repository.PriceHistoryRepository;
 import br.ufpr.tads.catalog.catalog.domain.repository.ProductRepository;
 import br.ufpr.tads.catalog.catalog.domain.repository.ProductStoreRepository;
 import br.ufpr.tads.catalog.catalog.domain.response.GetProductResponseDTO;
-import br.ufpr.tads.catalog.catalog.domain.response.PriceHistoryResponseDTO;
 import br.ufpr.tads.catalog.catalog.domain.response.commons.ItemDTO;
 import br.ufpr.tads.catalog.catalog.domain.response.commons.ProductDTO;
-import br.ufpr.tads.catalog.catalog.dto.commons.BranchDTO;
 import br.ufpr.tads.catalog.catalog.dto.commons.ProductsDTO;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,13 +37,10 @@ public class ProductService {
     @Autowired
     private PriceHistoryRepository priceHistoryRepository;
 
-    @Autowired
-    private RegisterRetriever registerRetriever;
-
     public void process(ProductsDTO productsDTO) {
         productsDTO.getItems().forEach(item -> {
             Product product = saveOrUpdateProduct(item);
-            ProductStore productStore = getOrCreateProductStore(productsDTO.getBranchId(), product, item.getUnitValue(), item.getUnit());
+            ProductStore productStore = getOrCreateProductStore(productsDTO, item, product);
             updatePriceIfNecessary(productStore, item.getUnitValue());
         });
     }
@@ -61,7 +56,7 @@ public class ProductService {
         return new PageImpl<>(productDTOList, pageable, products.getTotalElements());
     }
 
-    public GetProductResponseDTO getProductById(UUID id) {
+    public GetProductResponseDTO getProductByCode(UUID id) {
         Product product = productRepository.findById(id).orElseThrow(() -> new RuntimeException("Product not found"));
         ProductStore productStore = productStoreRepository.findTopByProductIdOrderByPriceAsc(product.getId());
         ProductDTO productDTO = ProductDTO.builder()
@@ -100,24 +95,6 @@ public class ProductService {
         return new SliceImpl<>(response, pageable, products.hasNext());
     }
 
-    public SliceImpl<PriceHistoryResponseDTO> getPriceHistory(UUID productId, Pageable pageable) {
-        Slice<PriceHistory> priceHistorySlice = priceHistoryRepository.findByProductId(productId, pageable);
-
-        List<PriceHistoryResponseDTO> responses = new ArrayList<>();
-
-        if (priceHistorySlice.hasContent()) {
-            responses = priceHistorySlice.getContent().stream()
-                    .map(this::createPriceHistoryResponse)
-                    .collect(Collectors.toList());
-        } else {
-            ProductStore productStore = productStoreRepository.findTopByProductIdOrderByPriceAsc(productId);
-            PriceHistoryResponseDTO responseDTO = createPriceHistoryResponseFromProductStore(productStore);
-            responses.add(responseDTO);
-        }
-
-        return new SliceImpl<>(responses, pageable, priceHistorySlice.hasNext());
-    }
-
     public SliceImpl<ProductDTO> getProductsDetails(List<UUID> productIdList, Pageable pageable) {
         List<ProductDTO> responseDTOS = new ArrayList<>();
         Page<Product> products = productRepository.findAllByIdIn(productIdList, pageable);
@@ -127,10 +104,10 @@ public class ProductService {
         });
         return new SliceImpl<>(responseDTOS, pageable, products.hasNext());
     }
-    private ProductStore getOrCreateProductStore(UUID branchId, Product product, BigDecimal price, String unit) {
-        return productStoreRepository.findByProductIdAndBranchId(product.getId(), branchId)
-                .orElseGet(() -> createAndSaveProductStore(branchId, product, price, unit));
 
+    private ProductStore getOrCreateProductStore(ProductsDTO productsDTO, ItemDTO item, Product product) {
+        return productStoreRepository.findByProductIdAndBranchId(product.getId(), productsDTO.getBranchId())
+                .orElseGet(() -> createAndSaveProductStore(productsDTO.getBranchId(), product, item.getUnitValue(), item.getUnit()));
     }
 
     private ProductStore createAndSaveProductStore(UUID branchId, Product product, BigDecimal price, String unit) {
@@ -183,40 +160,17 @@ public class ProductService {
         return productRepository.save(product);
     }
 
-    private PriceHistoryResponseDTO createPriceHistoryResponse(PriceHistory priceHistory) {
-        ProductStore productStore = productStoreRepository.findTopByProductIdOrderByPriceAsc(priceHistory.getProductStore().getProduct().getId());
-        PriceHistoryResponseDTO responseDTO = new PriceHistoryResponseDTO();
-        responseDTO.setStoreId(productStore.getBranchId());
-
-        BranchDTO branch = registerRetriever.getBranch(productStore.getBranchId());
-        responseDTO.setStoreName(nonNull(branch) ? branch.getStore().getName() : "Loja não encontrada");
-        responseDTO.setBranchId(branch.getId());
-        responseDTO.setPrice(priceHistory.getPrice());
-        responseDTO.setPriceChangeDate(priceHistory.getCreatedAt());
-
-        return responseDTO;
-    }
-
-    private PriceHistoryResponseDTO createPriceHistoryResponseFromProductStore(ProductStore productStore) {
-        PriceHistoryResponseDTO responseDTO = new PriceHistoryResponseDTO();
-        responseDTO.setStoreId(productStore.getBranchId());
-
-        BranchDTO branch = registerRetriever.getBranch(productStore.getBranchId());
-        responseDTO.setStoreName(nonNull(branch) ? branch.getStore().getName() : "Loja não encontrada");
-        responseDTO.setBranchId(branch.getId());
-        responseDTO.setPrice(productStore.getPrice());
-        responseDTO.setPriceChangeDate(null);
-
-        return responseDTO;
-    }
-
     private ProductDTO createProductDTO(Product product, ProductStore productStore) {
         ProductDTO productDTO = new ProductDTO();
         productDTO.setId(product.getId());
         productDTO.setName(product.getName());
         productDTO.setCode(product.getCode());
         productDTO.setPrice(productStore.getPrice());
+        productDTO.setUnit(productStore.getUnit());
+        productDTO.setCategory(nonNull(product.getCategory()) ? product.getCategory().getName() : null);
         productDTO.setStoreId(productStore.getBranchId());
+        //TODO: adicionar imagem no produto -> admin adiciona imagem
+//        productDTO.setImage(product.getImage());
         return productDTO;
     }
 

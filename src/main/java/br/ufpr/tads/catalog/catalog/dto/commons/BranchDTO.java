@@ -14,4 +14,5 @@ public class BranchDTO {
     private UUID id;
     private UUID correlationId;
     private StoreDTO store;
+    private double distance;
 }
