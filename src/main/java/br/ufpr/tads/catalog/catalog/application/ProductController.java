@@ -94,7 +94,7 @@ public class ProductController {
                                                      @RequestParam("sortBy") String sortBy) {
         try {
             log.info("Searching products price by stores {}, for cep {} in distance {}",
-                    productsPriceRequestDTO.getProductIdList(), productsPriceRequestDTO.getCep(), productsPriceRequestDTO.getDistance());
+                    productsPriceRequestDTO.getProducts(), productsPriceRequestDTO.getCep(), productsPriceRequestDTO.getDistance());
             Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
             return ResponseEntity.ok(priceService.calculateTotalPriceByStore(productsPriceRequestDTO, pageable));
         } catch (Exception e) {

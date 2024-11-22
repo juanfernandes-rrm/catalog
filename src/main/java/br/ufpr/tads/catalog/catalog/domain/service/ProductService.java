@@ -168,7 +168,11 @@ public class ProductService {
         productDTO.setName(product.getName());
         productDTO.setCode(product.getCode());
         productDTO.setPrice(productStore.getPrice());
+        productDTO.setUnit(productStore.getUnit());
+        productDTO.setCategory(nonNull(product.getCategory()) ? product.getCategory().getName() : null);
         productDTO.setStoreId(productStore.getBranchId());
+        //TODO: adicionar imagem no produto -> admin adiciona imagem
+//        productDTO.setImage(product.getImage());
         return productDTO;
     }
 
