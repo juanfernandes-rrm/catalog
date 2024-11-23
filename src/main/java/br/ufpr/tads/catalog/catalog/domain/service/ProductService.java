@@ -7,6 +7,7 @@ import br.ufpr.tads.catalog.catalog.domain.repository.PriceHistoryRepository;
 import br.ufpr.tads.catalog.catalog.domain.repository.ProductRepository;
 import br.ufpr.tads.catalog.catalog.domain.repository.ProductStoreRepository;
 import br.ufpr.tads.catalog.catalog.domain.response.GetProductResponseDTO;
+import br.ufpr.tads.catalog.catalog.domain.response.TotalRegisteredProducts;
 import br.ufpr.tads.catalog.catalog.domain.response.commons.ItemDTO;
 import br.ufpr.tads.catalog.catalog.domain.response.commons.ProductDTO;
 import br.ufpr.tads.catalog.catalog.dto.commons.ProductsDTO;
@@ -174,4 +175,7 @@ public class ProductService {
         return productDTO;
     }
 
+    public TotalRegisteredProducts getTotalRegisteredProducts() {
+        return new TotalRegisteredProducts(productRepository.count());
+    }
 }
