@@ -1,11 +1,13 @@
 package br.ufpr.tads.catalog.catalog.domain.service;
 
+import br.ufpr.tads.catalog.catalog.domain.model.Category;
 import br.ufpr.tads.catalog.catalog.domain.model.PriceHistory;
 import br.ufpr.tads.catalog.catalog.domain.model.Product;
 import br.ufpr.tads.catalog.catalog.domain.model.ProductStore;
 import br.ufpr.tads.catalog.catalog.domain.repository.PriceHistoryRepository;
 import br.ufpr.tads.catalog.catalog.domain.repository.ProductRepository;
 import br.ufpr.tads.catalog.catalog.domain.repository.ProductStoreRepository;
+import br.ufpr.tads.catalog.catalog.domain.request.AddCategoryToProductRequestDTO;
 import br.ufpr.tads.catalog.catalog.domain.response.GetProductResponseDTO;
 import br.ufpr.tads.catalog.catalog.domain.response.TotalRegisteredProducts;
 import br.ufpr.tads.catalog.catalog.domain.response.commons.ItemDTO;
@@ -22,9 +24,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static java.util.Objects.nonNull;
+import static java.util.stream.Collectors.toList;
 
 @Service
 public class ProductService {
@@ -37,6 +39,9 @@ public class ProductService {
 
     @Autowired
     private PriceHistoryRepository priceHistoryRepository;
+
+    @Autowired
+    private CategoryService categoryService;
 
     public void process(ProductsDTO productsDTO) {
         productsDTO.getItems().forEach(item -> {
@@ -52,7 +57,7 @@ public class ProductService {
         List<ProductDTO> productDTOList = products.stream().map(product -> {
             ProductStore productStore = productStoreRepository.findTopByProductIdOrderByPriceAsc(product.getId());
             return createProductDTO(product, productStore);
-        }).collect(Collectors.toList());
+        }).collect(toList());
 
         return new PageImpl<>(productDTOList, pageable, products.getTotalElements());
     }
@@ -120,6 +125,25 @@ public class ProductService {
         Slice<Product> productPage = productRepository.findByUrlImageIsNull(pageable);
         return new SliceImpl<>(productPage.stream().map(this::createProductDTOWithoutStore).toList(),
                 productPage.getPageable(), productPage.hasNext());
+    }
+
+    public ProductDTO addCategory(AddCategoryToProductRequestDTO requestDTO) {
+        Category category = categoryService.getCategoryById(requestDTO.getCategoryId());
+        Product product = productRepository.findById(requestDTO.getProductId()).orElseThrow(() -> new IllegalArgumentException("Product not found"));
+        product.setCategory(category);
+        return createProductDTOWithoutStore(productRepository.save(product));
+    }
+
+    public SliceImpl<ProductDTO> getProductsByCategory(Long categoryId, Pageable pageable) {
+        Category category = categoryService.getCategoryById(categoryId);
+        Slice<Product> productSlice = productRepository.findByCategory(category, pageable);
+
+        if (productSlice.hasContent()) {
+            List<ProductDTO> productDTOS = productSlice.getContent().stream().map(product -> createProductDTO(product, productStoreRepository.findTopByProductIdOrderByPriceAsc(product.getId()))).toList();
+            return new SliceImpl<>(productDTOS, productSlice.getPageable(), productSlice.hasNext());
+        }
+
+        return new SliceImpl<>(new ArrayList<>(), pageable, false);
     }
 
     private ProductStore getOrCreateProductStore(ProductsDTO productsDTO, ItemDTO item, Product product) {

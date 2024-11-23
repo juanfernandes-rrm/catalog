@@ -1,5 +1,6 @@
 package br.ufpr.tads.catalog.catalog.application;
 
+import br.ufpr.tads.catalog.catalog.domain.request.AddCategoryToProductRequestDTO;
 import br.ufpr.tads.catalog.catalog.domain.request.ProductsPriceRequestDTO;
 import br.ufpr.tads.catalog.catalog.domain.service.PriceService;
 import br.ufpr.tads.catalog.catalog.domain.service.ProductService;
@@ -116,6 +117,16 @@ public class ProductController {
         }
     }
 
+    @PatchMapping("/{productId}/add-category")
+    public ResponseEntity<?> addCategory(@PathVariable("productId") UUID productId, @RequestBody AddCategoryToProductRequestDTO addCategoryToProductRequestDTO) {
+        try {
+            log.info("Add category {} to product {}", addCategoryToProductRequestDTO.getCategoryId(), productId);
+            return ResponseEntity.ok(productService.addCategory(addCategoryToProductRequestDTO));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Erro interno: " + e.getMessage());
+        }
+    }
+
 
     //TODO: esses endpoins podem ser substituídos por um endpoint de busca com filtros
     @GetMapping("/without-category")
@@ -139,6 +150,20 @@ public class ProductController {
             log.info("Getting products without category");
             Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
             return ResponseEntity.ok(productService.getProductsWithoutImage(pageable));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Erro interno: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/by-category")
+    public ResponseEntity<?> getProductsByCategory(@RequestParam("categoryId") Long categoryId,
+                                                   @RequestParam("page") int page, @RequestParam("size") int size,
+                                                   @RequestParam("sortDirection") Sort.Direction sortDirection,
+                                                   @RequestParam("sortBy") String sortBy) {
+        try {
+            log.info("Getting products by category {}", categoryId);
+            Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+            return ResponseEntity.ok(productService.getProductsByCategory(categoryId, pageable));
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Erro interno: " + e.getMessage());
         }
