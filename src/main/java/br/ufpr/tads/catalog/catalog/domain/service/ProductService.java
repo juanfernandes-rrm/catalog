@@ -8,7 +8,6 @@ import br.ufpr.tads.catalog.catalog.domain.repository.PriceHistoryRepository;
 import br.ufpr.tads.catalog.catalog.domain.repository.ProductRepository;
 import br.ufpr.tads.catalog.catalog.domain.repository.ProductStoreRepository;
 import br.ufpr.tads.catalog.catalog.domain.request.AddCategoryToProductRequestDTO;
-import br.ufpr.tads.catalog.catalog.domain.response.GetProductResponseDTO;
 import br.ufpr.tads.catalog.catalog.domain.response.TotalRegisteredProducts;
 import br.ufpr.tads.catalog.catalog.domain.response.commons.ItemDTO;
 import br.ufpr.tads.catalog.catalog.domain.response.commons.ProductDTO;
@@ -62,19 +61,23 @@ public class ProductService {
         return new PageImpl<>(productDTOList, pageable, products.getTotalElements());
     }
 
-    public GetProductResponseDTO getProductByCode(UUID id) {
+    public ProductDTO getProductById(UUID id, boolean includeStore) {
         Product product = productRepository.findById(id).orElseThrow(() -> new RuntimeException("Product not found"));
-        ProductStore productStore = productStoreRepository.findTopByProductIdOrderByPriceAsc(product.getId());
-        ProductDTO productDTO = ProductDTO.builder()
+
+        ProductDTO.ProductDTOBuilder productDTOBuilder = ProductDTO.builder()
                 .id(product.getId())
                 .name(product.getName())
                 .code(product.getCode())
-                .category(nonNull(product.getCategory()) ? product.getCategory().getName() : null)
-                .price(productStore.getPrice())
-                .unit(productStore.getUnit())
-                .storeId(productStore.getBranchId())
-                .build();
-        return new GetProductResponseDTO(productDTO);
+                .category(nonNull(product.getCategory()) ? product.getCategory().getName() : null);
+
+        if (includeStore) {
+            ProductStore productStore = productStoreRepository.findTopByProductIdOrderByPriceAsc(product.getId());
+            productDTOBuilder.price(productStore.getPrice())
+                    .unit(productStore.getUnit())
+                    .storeId(productStore.getBranchId());
+        }
+
+        return productDTOBuilder.build();
     }
 
     public Page<ProductDTO> findLowestPriceForAllProducts(Pageable pageable) {

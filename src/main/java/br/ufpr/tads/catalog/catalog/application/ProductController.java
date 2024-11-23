@@ -39,10 +39,11 @@ public class ProductController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getProductById(@PathVariable("id") UUID id) {
+    public ResponseEntity<?> getProductById(@PathVariable("id") UUID id,
+                                            @RequestParam(value = "includeStore", required = false, defaultValue = "false") boolean includeStore) {
         try {
             log.info("Getting product {}", id);
-            return ResponseEntity.ok(productService.getProductByCode(id));
+            return ResponseEntity.ok(productService.getProductById(id, includeStore));
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Erro interno: " + e.getMessage());
         }
