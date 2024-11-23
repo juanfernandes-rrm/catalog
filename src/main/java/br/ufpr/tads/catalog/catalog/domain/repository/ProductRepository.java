@@ -7,6 +7,7 @@ import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -19,4 +20,8 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
     Slice<Product> findByNameContainingIgnoreCase(String name, Pageable pageable);
 
     Page<Product> findAllByIdIn(List<UUID> productIdList, Pageable pageable);
+
+    Slice<Product> findByCategoryIsNull(Pageable pageable);
+
+    Slice<Product> findByUrlImageIsNull(Pageable pageable);
 }

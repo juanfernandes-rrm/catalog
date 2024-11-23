@@ -116,4 +116,32 @@ public class ProductController {
         }
     }
 
+
+    //TODO: esses endpoins podem ser substituídos por um endpoint de busca com filtros
+    @GetMapping("/without-category")
+    public ResponseEntity<?> getProductsWithoutCategory(@RequestParam("page") int page, @RequestParam("size") int size,
+                                                        @RequestParam("sortDirection") Sort.Direction sortDirection,
+                                                        @RequestParam("sortBy") String sortBy) {
+        try {
+            log.info("Getting products without category");
+            Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+            return ResponseEntity.ok(productService.getProductsWithoutCategory(pageable));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Erro interno: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/without-image")
+    public ResponseEntity<?> getProductsWithoutImage(@RequestParam("page") int page, @RequestParam("size") int size,
+                                                     @RequestParam("sortDirection") Sort.Direction sortDirection,
+                                                     @RequestParam("sortBy") String sortBy) {
+        try {
+            log.info("Getting products without category");
+            Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+            return ResponseEntity.ok(productService.getProductsWithoutImage(pageable));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Erro interno: " + e.getMessage());
+        }
+    }
+
 }

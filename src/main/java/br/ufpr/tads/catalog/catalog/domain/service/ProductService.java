@@ -106,6 +106,22 @@ public class ProductService {
         return new SliceImpl<>(responseDTOS, pageable, products.hasNext());
     }
 
+    public TotalRegisteredProducts getTotalRegisteredProducts() {
+        return new TotalRegisteredProducts(productRepository.count());
+    }
+
+    public SliceImpl<ProductDTO> getProductsWithoutCategory(Pageable pageable) {
+        Slice<Product> productPage = productRepository.findByCategoryIsNull(pageable);
+        return new SliceImpl<>(productPage.stream().map(this::createProductDTOWithoutStore).toList(),
+                productPage.getPageable(), productPage.hasNext());
+    }
+
+    public SliceImpl<ProductDTO> getProductsWithoutImage(Pageable pageable) {
+        Slice<Product> productPage = productRepository.findByUrlImageIsNull(pageable);
+        return new SliceImpl<>(productPage.stream().map(this::createProductDTOWithoutStore).toList(),
+                productPage.getPageable(), productPage.hasNext());
+    }
+
     private ProductStore getOrCreateProductStore(ProductsDTO productsDTO, ItemDTO item, Product product) {
         return productStoreRepository.findByProductIdAndBranchId(product.getId(), productsDTO.getBranchId())
                 .orElseGet(() -> createAndSaveProductStore(productsDTO.getBranchId(), product, item.getUnitValue(), item.getUnit()));
@@ -170,12 +186,17 @@ public class ProductService {
         productDTO.setUnit(productStore.getUnit());
         productDTO.setCategory(nonNull(product.getCategory()) ? product.getCategory().getName() : null);
         productDTO.setStoreId(productStore.getBranchId());
-        //TODO: adicionar imagem no produto -> admin adiciona imagem
-//        productDTO.setImage(product.getImage());
         return productDTO;
     }
 
-    public TotalRegisteredProducts getTotalRegisteredProducts() {
-        return new TotalRegisteredProducts(productRepository.count());
+    private ProductDTO createProductDTOWithoutStore(Product product) {
+        ProductDTO productDTO = new ProductDTO();
+        productDTO.setId(product.getId());
+        productDTO.setName(product.getName());
+        productDTO.setCode(product.getCode());
+        productDTO.setCategory(nonNull(product.getCategory()) ? product.getCategory().getName() : null);
+        productDTO.setImage(product.getUrlImage());
+        return productDTO;
     }
+
 }

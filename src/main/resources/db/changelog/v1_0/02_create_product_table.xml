@@ -18,6 +18,9 @@
             <column name="CATEGORY_ID" type="BIGINT">
                 <constraints nullable="true"/>
             </column>
+            <column name="URL_IMAGE" type="VARCHAR(200)">
+                <constraints nullable="true"/>
+            </column>
         </createTable>
 
         <addForeignKeyConstraint baseTableName="PRODUCT"

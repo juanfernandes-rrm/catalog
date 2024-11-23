@@ -26,6 +26,9 @@ public class Product {
     @JoinColumn(name = "CATEGORY_ID")
     private Category category;
 
+    @Column(name = "URL_IMAGE")
+    private String urlImage;
+
     @Column(name = "PRODUCT_STORE_ID")
     @OneToMany(mappedBy = "product")
     private Set<ProductStore> productStore;
