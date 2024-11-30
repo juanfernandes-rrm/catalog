@@ -9,51 +9,61 @@
             <column name="ID" value="1"/>
             <column name="NAME" value="Alimentos"/>
             <column name="DESCRIPTION" value="Produtos alimentícios e bebidas"/>
+            <column name="URL_IMAGE" value="https://i.imgur.com/NckEcHC.png"/>
         </insert>
         <insert tableName="CATEGORY">
             <column name="ID" value="2"/>
             <column name="NAME" value="Higiene"/>
             <column name="DESCRIPTION" value="Produtos de higiene pessoal e cuidados"/>
+            <column name="URL_IMAGE" value="https://i.imgur.com/bp4qzfx.png"/>
         </insert>
         <insert tableName="CATEGORY">
             <column name="ID" value="3"/>
             <column name="NAME" value="Limpeza"/>
             <column name="DESCRIPTION" value="Produtos de limpeza e utilidades domésticas"/>
+            <column name="URL_IMAGE" value="https://i.imgur.com/O88QnCs.png"/>
         </insert>
         <insert tableName="CATEGORY">
             <column name="ID" value="4"/>
             <column name="NAME" value="Bebidas"/>
             <column name="DESCRIPTION" value="Bebidas alcoólicas e não alcoólicas"/>
+            <column name="URL_IMAGE" value="https://i.imgur.com/7Rt2UY5.png"/>
         </insert>
         <insert tableName="CATEGORY">
             <column name="ID" value="5"/>
             <column name="NAME" value="Carnes"/>
             <column name="DESCRIPTION" value="Carnes, aves e pescados"/>
+            <column name="URL_IMAGE" value="https://i.imgur.com/vEW1Xdq.png"/>
         </insert>
         <insert tableName="CATEGORY">
             <column name="ID" value="6"/>
             <column name="NAME" value="Frios e Laticínios"/>
             <column name="DESCRIPTION" value="Queijos, iogurtes, frios e derivados"/>
+            <column name="URL_IMAGE" value="https://i.imgur.com/SrmIoxd.png"/>
         </insert>
         <insert tableName="CATEGORY">
             <column name="ID" value="7"/>
             <column name="NAME" value="Hortifruti"/>
             <column name="DESCRIPTION" value="Frutas, legumes, verduras e produtos frescos"/>
+            <column name="URL_IMAGE" value="https://i.imgur.com/pL4reLZ.png"/>
         </insert>
         <insert tableName="CATEGORY">
             <column name="ID" value="8"/>
             <column name="NAME" value="Padaria e Confeitaria"/>
             <column name="DESCRIPTION" value="Pães, bolos e produtos de confeitaria"/>
+            <column name="URL_IMAGE" value="https://i.imgur.com/7KX9iWF.png"/>
         </insert>
         <insert tableName="CATEGORY">
             <column name="ID" value="11"/>
             <column name="NAME" value="Saúde e Beleza"/>
             <column name="DESCRIPTION" value="Cosméticos, maquiagens e produtos de saúde"/>
+            <column name="URL_IMAGE" value="https://i.imgur.com/Zmdjf2M.png"/>
         </insert>
         <insert tableName="CATEGORY">
             <column name="ID" value="14"/>
             <column name="NAME" value="Utilidades Domésticas"/>
             <column name="DESCRIPTION" value="Produtos para o lar e cozinha"/>
+            <column name="URL_IMAGE" value="https://i.imgur.com/hvH23NR.png"/>
         </insert>
     </changeSet>
 </databaseChangeLog>
