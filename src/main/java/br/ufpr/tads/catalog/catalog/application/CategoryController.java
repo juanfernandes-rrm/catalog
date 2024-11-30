@@ -8,6 +8,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @Slf4j
@@ -18,6 +19,7 @@ public class CategoryController {
     @Autowired
     private CategoryService categoryService;
 
+    @PreAuthorize("hasAnyRole('ADMIN')")
     @PostMapping
     public ResponseEntity<?> createCategory(@RequestBody CreateCategoryRequestDTO createCategoryRequestDTO) {
         log.info("Creating category");
@@ -41,6 +43,7 @@ public class CategoryController {
         }
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteCategories(@PathVariable("id") Long id) {
         try {
@@ -52,6 +55,7 @@ public class CategoryController {
         }
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<?> updateCategories(@PathVariable("id") Long id, @RequestBody CreateCategoryRequestDTO createCategoryRequestDTO) {
         try {

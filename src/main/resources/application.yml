@@ -1,6 +1,11 @@
 server:
   port: 8083
 spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/nota-social
   liquibase:
     change-log: classpath:db/changelog/changelog-main.xml
   rabbitmq:
@@ -27,3 +32,9 @@ broker:
   queue:
     receipt-scan:
       name: default.product
+
+logging:
+  level:
+    org:
+      springframework:
+        security: DEBUG
