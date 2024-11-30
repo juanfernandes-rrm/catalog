@@ -52,7 +52,7 @@ public class PriceService {
                     .map(this::createPriceHistoryResponse)
                     .collect(Collectors.toList());
         } else {
-            ProductStore productStore = productStoreRepository.findTopByProductIdOrderByPriceAsc(productId);
+            ProductStore productStore = productStoreRepository.findFirstByProductIdOrderByPriceAsc(productId);
             PriceHistoryResponseDTO responseDTO = createPriceHistoryResponseFromProductStore(productStore);
             responses.add(responseDTO);
         }
@@ -116,7 +116,7 @@ public class PriceService {
     }
 
     private PriceHistoryResponseDTO createPriceHistoryResponse(PriceHistory priceHistory) {
-        ProductStore productStore = productStoreRepository.findTopByProductIdOrderByPriceAsc(priceHistory.getProductStore().getProduct().getId());
+        ProductStore productStore = productStoreRepository.findFirstByProductIdOrderByPriceAsc(priceHistory.getProductStore().getProduct().getId());
         PriceHistoryResponseDTO responseDTO = new PriceHistoryResponseDTO();
         responseDTO.setStoreId(productStore.getBranchId());
 

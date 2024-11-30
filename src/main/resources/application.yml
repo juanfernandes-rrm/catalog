@@ -6,12 +6,12 @@ spring:
   rabbitmq:
     host: localhost
     port: 5672
-    username: guest
-    password: guest
+    username: user
+    password: password
   datasource:
     url: jdbc:mysql://localhost:3306/catalog_db?createIfNotExists=true
     username: root
-    password: my-secret-pw
+    password: rootpassword
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:

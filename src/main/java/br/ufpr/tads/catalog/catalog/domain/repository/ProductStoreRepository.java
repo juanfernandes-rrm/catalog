@@ -12,8 +12,7 @@ import java.util.UUID;
 @Repository
 public interface ProductStoreRepository extends JpaRepository<ProductStore, UUID> {
 
-    @Query("SELECT ps FROM ProductStore ps WHERE ps.product.id = :productId ORDER BY ps.price ASC")
-    ProductStore findTopByProductIdOrderByPriceAsc(UUID productId);
+    ProductStore findFirstByProductIdOrderByPriceAsc(UUID productId);
 
     Optional<ProductStore> findByProductIdAndBranchId(UUID id, UUID branchId);
 

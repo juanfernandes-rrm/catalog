@@ -58,7 +58,7 @@ public class ProductService {
         Page<Product> products = productRepository.findAll(pageable);
 
         List<ProductDTO> productDTOList = products.stream().map(product -> {
-            ProductStore productStore = productStoreRepository.findTopByProductIdOrderByPriceAsc(product.getId());
+            ProductStore productStore = productStoreRepository.findFirstByProductIdOrderByPriceAsc(product.getId());
             return productMapper.createProductDTO(product, productStore);
         }).collect(toList());
 
@@ -76,7 +76,7 @@ public class ProductService {
                 .image(product.getUrlImage());
 
         if (includeStore) {
-            ProductStore productStore = productStoreRepository.findTopByProductIdOrderByPriceAsc(product.getId());
+            ProductStore productStore = productStoreRepository.findFirstByProductIdOrderByPriceAsc(product.getId());
             productDTOBuilder.price(productStore.getPrice())
                     .unit(productStore.getUnit())
                     .storeId(productStore.getBranchId());
@@ -89,7 +89,7 @@ public class ProductService {
         List<ProductDTO> responseDTOS = new ArrayList<>();
         Page<Product> products = productRepository.findAll(pageable);
         products.forEach(product -> {
-            ProductStore productStore = productStoreRepository.findTopByProductIdOrderByPriceAsc(product.getId());
+            ProductStore productStore = productStoreRepository.findFirstByProductIdOrderByPriceAsc(product.getId());
             responseDTOS.add(productMapper.createProductDTO(product, productStore));
         });
         return new PageImpl<>(responseDTOS, pageable, products.getTotalElements());
@@ -102,7 +102,7 @@ public class ProductService {
 
         List<ProductDTO> response = products.stream()
                 .map(product -> {
-                    ProductStore productStore = productStoreRepository.findTopByProductIdOrderByPriceAsc(product.getId());
+                    ProductStore productStore = productStoreRepository.findFirstByProductIdOrderByPriceAsc(product.getId());
                     return productMapper.createProductDTO(product, productStore);
                 })
                 .toList();
@@ -113,7 +113,7 @@ public class ProductService {
         List<ProductDTO> responseDTOS = new ArrayList<>();
         Page<Product> products = productRepository.findAllByIdIn(productIdList, pageable);
         products.forEach(product -> {
-            ProductStore productStore = productStoreRepository.findTopByProductIdOrderByPriceAsc(product.getId());
+            ProductStore productStore = productStoreRepository.findFirstByProductIdOrderByPriceAsc(product.getId());
             responseDTOS.add(productMapper.createProductDTO(product, productStore));
         });
         return new SliceImpl<>(responseDTOS, pageable, products.hasNext());
@@ -148,7 +148,7 @@ public class ProductService {
 
         if (productSlice.hasContent()) {
             List<ProductDTO> productDTOS = productSlice.getContent().stream()
-                    .map(product -> productMapper.createProductDTO(product, productStoreRepository.findTopByProductIdOrderByPriceAsc(product.getId()))).toList();
+                    .map(product -> productMapper.createProductDTO(product, productStoreRepository.findFirstByProductIdOrderByPriceAsc(product.getId()))).toList();
             return new SliceImpl<>(productDTOS, productSlice.getPageable(), productSlice.hasNext());
         }
 
