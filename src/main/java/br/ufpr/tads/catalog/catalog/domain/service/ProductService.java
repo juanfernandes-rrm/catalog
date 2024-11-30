@@ -214,6 +214,7 @@ public class ProductService {
         productDTO.setUnit(productStore.getUnit());
         productDTO.setCategory(nonNull(product.getCategory()) ? product.getCategory().getName() : null);
         productDTO.setStoreId(productStore.getBranchId());
+        productDTO.setImage(product.getUrlImage());
         return productDTO;
     }
 
