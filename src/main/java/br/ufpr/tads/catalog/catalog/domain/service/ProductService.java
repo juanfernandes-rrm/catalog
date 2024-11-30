@@ -1,5 +1,6 @@
 package br.ufpr.tads.catalog.catalog.domain.service;
 
+import br.ufpr.tads.catalog.catalog.domain.mapper.ProductMapper;
 import br.ufpr.tads.catalog.catalog.domain.model.Category;
 import br.ufpr.tads.catalog.catalog.domain.model.PriceHistory;
 import br.ufpr.tads.catalog.catalog.domain.model.Product;
@@ -42,6 +43,9 @@ public class ProductService {
     @Autowired
     private CategoryService categoryService;
 
+    @Autowired
+    private ProductMapper productMapper;
+
     public void process(ProductsDTO productsDTO) {
         productsDTO.getItems().forEach(item -> {
             Product product = saveOrUpdateProduct(item);
@@ -55,7 +59,7 @@ public class ProductService {
 
         List<ProductDTO> productDTOList = products.stream().map(product -> {
             ProductStore productStore = productStoreRepository.findTopByProductIdOrderByPriceAsc(product.getId());
-            return createProductDTO(product, productStore);
+            return productMapper.createProductDTO(product, productStore);
         }).collect(toList());
 
         return new PageImpl<>(productDTOList, pageable, products.getTotalElements());
@@ -86,7 +90,7 @@ public class ProductService {
         Page<Product> products = productRepository.findAll(pageable);
         products.forEach(product -> {
             ProductStore productStore = productStoreRepository.findTopByProductIdOrderByPriceAsc(product.getId());
-            responseDTOS.add(createProductDTO(product, productStore));
+            responseDTOS.add(productMapper.createProductDTO(product, productStore));
         });
         return new PageImpl<>(responseDTOS, pageable, products.getTotalElements());
     }
@@ -99,7 +103,7 @@ public class ProductService {
         List<ProductDTO> response = products.stream()
                 .map(product -> {
                     ProductStore productStore = productStoreRepository.findTopByProductIdOrderByPriceAsc(product.getId());
-                    return createProductDTO(product, productStore);
+                    return productMapper.createProductDTO(product, productStore);
                 })
                 .toList();
         return new SliceImpl<>(response, pageable, products.hasNext());
@@ -110,7 +114,7 @@ public class ProductService {
         Page<Product> products = productRepository.findAllByIdIn(productIdList, pageable);
         products.forEach(product -> {
             ProductStore productStore = productStoreRepository.findTopByProductIdOrderByPriceAsc(product.getId());
-            responseDTOS.add(createProductDTO(product, productStore));
+            responseDTOS.add(productMapper.createProductDTO(product, productStore));
         });
         return new SliceImpl<>(responseDTOS, pageable, products.hasNext());
     }
@@ -121,13 +125,13 @@ public class ProductService {
 
     public SliceImpl<ProductDTO> getProductsWithoutCategory(Pageable pageable) {
         Slice<Product> productPage = productRepository.findByCategoryIsNull(pageable);
-        return new SliceImpl<>(productPage.stream().map(this::createProductDTOWithoutStore).toList(),
+        return new SliceImpl<>(productPage.stream().map(productMapper::createProductDTOWithoutStore).toList(),
                 productPage.getPageable(), productPage.hasNext());
     }
 
     public SliceImpl<ProductDTO> getProductsWithoutImage(Pageable pageable) {
         Slice<Product> productPage = productRepository.findByUrlImageIsNull(pageable);
-        return new SliceImpl<>(productPage.stream().map(this::createProductDTOWithoutStore).toList(),
+        return new SliceImpl<>(productPage.stream().map(productMapper::createProductDTOWithoutStore).toList(),
                 productPage.getPageable(), productPage.hasNext());
     }
 
@@ -135,7 +139,7 @@ public class ProductService {
         Category category = categoryService.getCategoryById(requestDTO.getCategoryId());
         Product product = productRepository.findById(requestDTO.getProductId()).orElseThrow(() -> new IllegalArgumentException("Product not found"));
         product.setCategory(category);
-        return createProductDTOWithoutStore(productRepository.save(product));
+        return productMapper.createProductDTOWithoutStore(productRepository.save(product));
     }
 
     public SliceImpl<ProductDTO> getProductsByCategory(Long categoryId, Pageable pageable) {
@@ -143,7 +147,8 @@ public class ProductService {
         Slice<Product> productSlice = productRepository.findByCategory(category, pageable);
 
         if (productSlice.hasContent()) {
-            List<ProductDTO> productDTOS = productSlice.getContent().stream().map(product -> createProductDTO(product, productStoreRepository.findTopByProductIdOrderByPriceAsc(product.getId()))).toList();
+            List<ProductDTO> productDTOS = productSlice.getContent().stream()
+                    .map(product -> productMapper.createProductDTO(product, productStoreRepository.findTopByProductIdOrderByPriceAsc(product.getId()))).toList();
             return new SliceImpl<>(productDTOS, productSlice.getPageable(), productSlice.hasNext());
         }
 
@@ -203,29 +208,6 @@ public class ProductService {
         product.setName(item.getName());
         product.setCode(item.getCode());
         return productRepository.save(product);
-    }
-
-    private ProductDTO createProductDTO(Product product, ProductStore productStore) {
-        ProductDTO productDTO = new ProductDTO();
-        productDTO.setId(product.getId());
-        productDTO.setName(product.getName());
-        productDTO.setCode(product.getCode());
-        productDTO.setPrice(productStore.getPrice());
-        productDTO.setUnit(productStore.getUnit());
-        productDTO.setCategory(nonNull(product.getCategory()) ? product.getCategory().getName() : null);
-        productDTO.setStoreId(productStore.getBranchId());
-        productDTO.setImage(product.getUrlImage());
-        return productDTO;
-    }
-
-    private ProductDTO createProductDTOWithoutStore(Product product) {
-        ProductDTO productDTO = new ProductDTO();
-        productDTO.setId(product.getId());
-        productDTO.setName(product.getName());
-        productDTO.setCode(product.getCode());
-        productDTO.setCategory(nonNull(product.getCategory()) ? product.getCategory().getName() : null);
-        productDTO.setImage(product.getUrlImage());
-        return productDTO;
     }
 
 }
