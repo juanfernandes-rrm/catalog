@@ -10,6 +10,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -118,6 +119,7 @@ public class ProductController {
         }
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{productId}/add-category")
     public ResponseEntity<?> addCategory(@PathVariable("productId") UUID productId, @RequestBody AddCategoryToProductRequestDTO addCategoryToProductRequestDTO) {
         try {
@@ -130,6 +132,7 @@ public class ProductController {
 
 
     //TODO: esses endpoins podem ser substituídos por um endpoint de busca com filtros
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/without-category")
     public ResponseEntity<?> getProductsWithoutCategory(@RequestParam("page") int page, @RequestParam("size") int size,
                                                         @RequestParam("sortDirection") Sort.Direction sortDirection,
@@ -143,6 +146,7 @@ public class ProductController {
         }
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/without-image")
     public ResponseEntity<?> getProductsWithoutImage(@RequestParam("page") int page, @RequestParam("size") int size,
                                                      @RequestParam("sortDirection") Sort.Direction sortDirection,
