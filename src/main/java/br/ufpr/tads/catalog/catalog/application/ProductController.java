@@ -12,6 +12,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -171,6 +172,18 @@ public class ProductController {
             return ResponseEntity.ok(productService.getProductsByCategory(categoryId, pageable));
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Erro interno: " + e.getMessage());
+        }
+    }
+
+    @PreAuthorize("hasAnyRole('ADMIN')")
+    @PostMapping("{productId}/upload-image")
+    public ResponseEntity<?> uploadImage(@PathVariable UUID productId, @RequestParam("image") MultipartFile image) {
+        try {
+            log.info("Uploading image for product {}", productId);
+            productService.uploadImage(productId, image);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Erro ao fazer upload: " + e.getMessage());
         }
     }
 

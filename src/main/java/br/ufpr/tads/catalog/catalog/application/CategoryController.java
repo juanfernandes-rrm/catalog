@@ -7,9 +7,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @RestController
@@ -20,11 +22,11 @@ public class CategoryController {
     private CategoryService categoryService;
 
     @PreAuthorize("hasAnyRole('ADMIN')")
-    @PostMapping
-    public ResponseEntity<?> createCategory(@RequestBody CreateCategoryRequestDTO createCategoryRequestDTO) {
-        log.info("Creating category");
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> createCategory(@RequestPart CreateCategoryRequestDTO createCategoryRequestDTO, @RequestPart("image") MultipartFile image) {
+        log.info("Creating category {}", createCategoryRequestDTO.getName());
         try {
-            return ResponseEntity.ok(categoryService.createCategory(createCategoryRequestDTO));
+            return ResponseEntity.ok(categoryService.createCategory(createCategoryRequestDTO, image));
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Erro interno: " + e.getMessage());
         }
@@ -45,7 +47,7 @@ public class CategoryController {
 
     @PreAuthorize("hasAnyRole('ADMIN')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteCategories(@PathVariable("id") Long id) {
+    public ResponseEntity<?> deleteCategory(@PathVariable("id") Long id) {
         try {
             log.info("Deleting category {}", id);
             categoryService.deleteCategory(id);
@@ -56,11 +58,11 @@ public class CategoryController {
     }
 
     @PreAuthorize("hasAnyRole('ADMIN')")
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateCategories(@PathVariable("id") Long id, @RequestBody CreateCategoryRequestDTO createCategoryRequestDTO) {
+    @PutMapping(path = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> updateCategory(@PathVariable("id") Long id, @RequestPart CreateCategoryRequestDTO createCategoryRequestDTO, @RequestPart("image") MultipartFile image) {
         try {
             log.info("Updating category {}", id);
-            return ResponseEntity.ok(categoryService.updateCategory(id, createCategoryRequestDTO));
+            return ResponseEntity.ok(categoryService.updateCategory(id, createCategoryRequestDTO, image));
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Erro interno: " + e.getMessage());
         }

@@ -1,5 +1,6 @@
 package br.ufpr.tads.catalog.catalog.domain.service;
 
+import br.ufpr.tads.catalog.catalog.domain.client.ImgurClient;
 import br.ufpr.tads.catalog.catalog.domain.model.Category;
 import br.ufpr.tads.catalog.catalog.domain.repository.CategoryRepository;
 import br.ufpr.tads.catalog.catalog.domain.request.CreateCategoryRequestDTO;
@@ -9,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.SliceImpl;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,11 +21,18 @@ public class CategoryService {
     @Autowired
     private CategoryRepository categoryRepository;
 
-    public CategoryResponseDTO createCategory(CreateCategoryRequestDTO createCategoryRequestDTO) {
+    @Autowired
+    private ImgurClient imgurClient;
 
+    public CategoryResponseDTO createCategory(CreateCategoryRequestDTO createCategoryRequestDTO, MultipartFile image) {
         validateCategoryRequest(createCategoryRequestDTO);
 
-        return mapToDTO(categoryRepository.save(mapToEntity(createCategoryRequestDTO)));
+        try {
+            String urlImage = imgurClient.uploadImage(image);
+            return mapToDTO(categoryRepository.save(mapToEntity(createCategoryRequestDTO, urlImage)));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public SliceImpl<CategoryResponseDTO> getCategories(Pageable pageable) {
@@ -38,7 +47,7 @@ public class CategoryService {
         categoryRepository.findById(id).ifPresent(categoryRepository::delete);
     }
 
-    public CategoryResponseDTO updateCategory(Long id, CreateCategoryRequestDTO createCategoryRequestDTO) {
+    public CategoryResponseDTO updateCategory(Long id, CreateCategoryRequestDTO createCategoryRequestDTO, MultipartFile image) {
         Optional<Category> optionalCategory = categoryRepository.findById(id);
 
         if (optionalCategory.isEmpty()) {
@@ -47,13 +56,18 @@ public class CategoryService {
 
         validateCategoryRequest(createCategoryRequestDTO);
 
-        Category category = optionalCategory.get();
-        category.setName(createCategoryRequestDTO.getName());
-        category.setDescription(createCategoryRequestDTO.getDescription());
-        category.setUrlImage(createCategoryRequestDTO.getUrlImage());
-        categoryRepository.save(category);
+        try {
+            String urlImage = imgurClient.uploadImage(image);
 
-        return mapToDTO(optionalCategory.get());
+            Category category = optionalCategory.get();
+            category.setName(createCategoryRequestDTO.getName());
+            category.setDescription(createCategoryRequestDTO.getDescription());
+            categoryRepository.save(category);
+
+            return mapToDTO(optionalCategory.get());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void validateCategoryRequest(CreateCategoryRequestDTO createCategoryRequestDTO) {
@@ -62,11 +76,11 @@ public class CategoryService {
         }
     }
 
-    private Category mapToEntity(CreateCategoryRequestDTO createCategoryRequestDTO) {
+    private Category mapToEntity(CreateCategoryRequestDTO createCategoryRequestDTO, String urlImage) {
         return Category.builder()
                 .name(createCategoryRequestDTO.getName())
                 .description(createCategoryRequestDTO.getDescription())
-                .urlImage(createCategoryRequestDTO.getUrlImage())
+                .urlImage(urlImage)
                 .build();
     }
 

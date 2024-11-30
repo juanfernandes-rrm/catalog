@@ -1,5 +1,6 @@
 package br.ufpr.tads.catalog.catalog.domain.service;
 
+import br.ufpr.tads.catalog.catalog.domain.client.ImgurClient;
 import br.ufpr.tads.catalog.catalog.domain.mapper.ProductMapper;
 import br.ufpr.tads.catalog.catalog.domain.model.Category;
 import br.ufpr.tads.catalog.catalog.domain.model.PriceHistory;
@@ -17,6 +18,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -42,6 +44,9 @@ public class ProductService {
 
     @Autowired
     private CategoryService categoryService;
+
+    @Autowired
+    private ImgurClient imgurClient;
 
     @Autowired
     private ProductMapper productMapper;
@@ -210,4 +215,20 @@ public class ProductService {
         return productRepository.save(product);
     }
 
+    public ProductDTO uploadImage(UUID productId, MultipartFile file) {
+        Optional<Product> optionalProduct = productRepository.findById(productId);
+
+        if (optionalProduct.isEmpty()) {
+            throw new RuntimeException("Product" + productId + "not found");
+        }
+
+        try {
+            Product product = optionalProduct.get();
+            String imageUrl = imgurClient.uploadImage(file);
+            product.setUrlImage(imageUrl);
+            return productMapper.createProductDTOWithoutStore(productRepository.save(product));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

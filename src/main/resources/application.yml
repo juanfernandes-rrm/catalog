@@ -33,6 +33,10 @@ broker:
     receipt-scan:
       name: default.product
 
+imgur:
+  upload-url: https://api.imgur.com/3/image
+  client-id: 067de737e030833
+
 logging:
   level:
     org:

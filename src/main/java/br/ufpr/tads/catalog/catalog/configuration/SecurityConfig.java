@@ -16,7 +16,8 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     public static final String[] AUTH_ADMIN = {
-        "/admin/**", "/category/*", "/product/*/add-category", "/product/without-category", "/product/without-image"
+        "/admin/**", "/category/*", "/product/*/add-category", "/product/without-category", "/product/without-image",
+            "product/*/upload-image"
     };
 
     public static final String[] POST_PUBLIC_ENDPOINTS = {
