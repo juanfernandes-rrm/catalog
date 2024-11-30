@@ -68,7 +68,8 @@ public class ProductService {
                 .id(product.getId())
                 .name(product.getName())
                 .code(product.getCode())
-                .category(nonNull(product.getCategory()) ? product.getCategory().getName() : null);
+                .category(nonNull(product.getCategory()) ? product.getCategory().getName() : null)
+                .image(product.getUrlImage());
 
         if (includeStore) {
             ProductStore productStore = productStoreRepository.findTopByProductIdOrderByPriceAsc(product.getId());
